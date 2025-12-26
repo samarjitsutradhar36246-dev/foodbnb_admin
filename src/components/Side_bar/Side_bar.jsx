@@ -74,7 +74,7 @@ const Side_bar = ({ isOpen, onClose }) => {
             </button>
           </div>
 
-          <nav className="flex-1 space-y-1 px-3">
+          <nav className="space-y-1 px-3">
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -90,7 +90,7 @@ const Side_bar = ({ isOpen, onClose }) => {
               );
             })}
           </nav>
-          <div className="border-t border-slate-200 p-4 text-xs text-slate-500">
+          <div className="border-t border-slate-200 p-4 text-xs text-slate-500 mt-[auto]">
             <button className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:scale-[0.99]">
               Logout
               <LogOut size={18} className="mr-2" />
