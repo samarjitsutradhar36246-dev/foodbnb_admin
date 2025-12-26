@@ -5,6 +5,7 @@ import Navbar from "./components/navbar/Navbar.jsx";
 import Side_bar from "./components/Side_bar/Side_bar.jsx";
 import Info from "./components/info/Info.jsx";
 import Setting_page from "./components/setting_page/Setting_page.jsx";
+import Charts from "./components/charts/Charts.jsx"
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -36,7 +37,7 @@ function App() {
           <div className="flex min-h-screen flex-1 flex-col">
             <Navbar showMenuButton={!isDesktop} onMenuClick={toggleSidebar} />
             <Routes>
-              <Route path="/info" element={<Info />} />
+              <Route path="/charts" element={<Charts />} />
               <Route path="/settings" element={<Setting_page />} />
             </Routes>
           </div>

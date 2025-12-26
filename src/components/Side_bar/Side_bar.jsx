@@ -3,7 +3,7 @@ import { Home, PieChart, Settings, Users, X } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const navItems = [
-  { label: "Dashboard", icon: Home, href: "/info" },
+  { label: "Dashboard", icon: Home, href: "/charts" },
   { label: "Users", icon: Users, href: "/users" },
   { label: "Analytics", icon: PieChart, href: "/analytics" },
   { label: "Settings", icon: Settings, href: "/settings" },
