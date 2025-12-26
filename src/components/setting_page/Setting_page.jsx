@@ -1,7 +1,7 @@
 function Setting_page() {
   return (
     <div>
-      <h1>Setting Page</h1>
+      <h1>welcome to settings page</h1>
     </div>
   );
 }
