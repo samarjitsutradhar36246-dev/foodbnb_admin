@@ -1,7 +1,7 @@
 // DashboardOverview.jsx
 import React from 'react';
 import { 
-  DollarSign, 
+  IndianRupee, 
   Users, 
   ShoppingCart, 
   UserPlus, 
@@ -23,11 +23,11 @@ export default function DashboardOverview() {
   // ============================================
   const StatCard = ({ title, value, change, icon: Icon, isNegative }) => {
     return (
-      <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300">
+      <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 shadow-lg hover:shadow-2xl hover:scale-105 hover:-translate-y-1 transition-all duration-300 cursor-pointer">
         {/* Card Header */}
         <div className="flex items-start justify-between mb-4">
           <h3 className="text-slate-400 text-sm font-medium">{title}</h3>
-          <div className="bg-slate-700/50 p-2 rounded-lg">
+          <div className="bg-slate-700/50 p-2 rounded-lg group-hover:bg-slate-700 transition-colors duration-300">
             <Icon className="w-5 h-5 text-emerald-400" />
           </div>
         </div>
@@ -59,7 +59,7 @@ export default function DashboardOverview() {
       title: 'Total Revenue',
       value: '$45,231.89',
       change: '20.1%',
-      icon: DollarSign,
+      icon: IndianRupee,
       isNegative: false
     },
     {
