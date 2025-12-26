@@ -1,22 +1,24 @@
 import React, { useState } from "react";
 import { Menu, Search, User, X } from "lucide-react";
 
-const Navbar = ({ showMenuButton, onMenuClick }) => {
+const Navbar = ({ showMenuButton, onMenuClick, sidebarOpen }) => {
   const [showSearch, setShowSearch] = useState(false);
   const toggleSearch = () => setShowSearch((prev) => !prev);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-5 shadow-sm">
       <div className="flex items-center gap-3">
+        {/* Hamburger / Cross Button */}
         {showMenuButton && (
           <button
             type="button"
             className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:text-slate-800 lg:hidden"
-            aria-label="Open sidebar"
+            aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
             onClick={onMenuClick}>
-            <Menu size={18} />
+            {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
         )}
+
         <div
           className={`text-lg font-bold tracking-wide text-slate-900 ${
             showSearch ? "hidden sm:block" : ""
@@ -24,10 +26,6 @@ const Navbar = ({ showMenuButton, onMenuClick }) => {
           Foodbnb
         </div>
       </div>
-
-      {/* <div className="absolute left-1/2 -translate-x-1/2 text-base font-semibold text-slate-800 hidden sm:block">
-        Admin panel
-      </div> */}
 
       <div className="flex items-center gap-3.5">
         <div className="relative flex h-10 items-center min-w-0">

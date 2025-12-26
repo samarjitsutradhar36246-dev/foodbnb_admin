@@ -31,7 +31,12 @@ function App() {
   return (
     <>
       <Router>
-        <Navbar showMenuButton={!isDesktop} onMenuClick={toggleSidebar} />
+        <Navbar
+          showMenuButton={!isDesktop}
+          onMenuClick={toggleSidebar}
+          sidebarOpen={sidebarOpen} // <-- add this
+        />
+
         <Side_bar isOpen={sidebarOpen} onClose={closeSidebar} />
 
         <main className="fixed top-16 left-0 right-0 bottom-0 lg:left-64 overflow-y-auto">
