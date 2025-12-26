@@ -25,9 +25,9 @@ const Navbar = ({ showMenuButton, onMenuClick }) => {
         </div>
       </div>
 
-      <div className="absolute left-1/2 -translate-x-1/2 text-base font-semibold text-slate-800 hidden sm:block">
+      {/* <div className="absolute left-1/2 -translate-x-1/2 text-base font-semibold text-slate-800 hidden sm:block">
         Admin panel
-      </div>
+      </div> */}
 
       <div className="flex items-center gap-3.5">
         <div className="relative flex h-10 items-center min-w-0">
