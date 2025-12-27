@@ -55,8 +55,8 @@ const Analytics = () => {
     { month: "Feb", revenue: "₹15,200", orders: "398 orders", percentage: 65 },
     { month: "Mar", revenue: "₹18,900", orders: "456 orders", percentage: 80 },
     { month: "Apr", revenue: "₹16,300", orders: "412 orders", percentage: 70 },
-    { month: "May", revenue: "₹21,500", orders: "523 orders", percentage: 90 },
-    { month: "Jun", revenue: "₹24,800", orders: "602 orders", percentage: 100 },
+    { month: "May", revenue: "₹21,500", orders: "523 orders", percentage: 46 },
+    { month: "Jun", revenue: "₹24,800", orders: "602 orders", percentage: 65 },
   ];
 
   const orderFrequency = [

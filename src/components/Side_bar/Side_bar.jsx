@@ -13,7 +13,7 @@ import { Link } from "react-router-dom";
 
 const navItems = [
   { label: "Dashboard", icon: Home, href: "/charts" },
-  { label: "Customers", icon: Users, href: "/users" },
+  { label: "Customers", icon: Users, href: "/customers" },
   { label: "Orders", icon: ShoppingBag, href: "/orders" },
   { label: "Delivery", icon: PackageOpen, href: "/" },
   { label: "Analytics", icon: PieChart, href: "/analytics" },

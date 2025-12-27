@@ -8,6 +8,7 @@ import Setting_page from "./components/setting_page/Setting_page.jsx";
 import Charts from "./components/charts/Charts.jsx";
 import Analytics from "./components/analytics/Analytics.jsx";
 import Orders from "./components/orders/Orders.jsx";
+import Customer from "./components/customers/Customer.jsx";
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -47,6 +48,8 @@ function App() {
             <Route path="/settings" element={<Setting_page />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/orders" element={<Orders />} />
+            <Route path="/customers" element={<Customer />} />
+
           </Routes>
         </main>
       </Router>

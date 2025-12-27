@@ -40,11 +40,11 @@ export default function DashboardOverview() {
             {isNegative ? (
               <TrendingDown className="w-4 h-4 text-red-800" />
             ) : (
-              <TrendingUp className="w-4 h-4 text-emerald-800" />
+              <TrendingUp className="w-4 h-4 text-green-800" />
             )}
             <span
               className={`text-sm font-medium ${
-                isNegative ? "text-red-800" : "text-emerald-800"
+                isNegative ? "text-red-800" : "text-green-800"
               }`}>
               {change}
             </span>
@@ -140,6 +140,27 @@ export default function DashboardOverview() {
     },
     {
       id: 8,
+      customer: "Fiona Green",
+      product: "Pad Thai Noodles",
+      price: "$17.99",
+      status: "processing",
+    },
+    {
+      id: 9,
+      customer: "Diana Prince",
+      product: "Caesar Salad & Soup",
+      price: "$12.49",
+      status: "completed",
+    },
+    {
+      id: 10,
+      customer: "Ethan Hunt",
+      product: "Beef Tacos (3 pcs)",
+      price: "$14.99",
+      status: "pending",
+    },
+    {
+      id: 11,
       customer: "Fiona Green",
       product: "Pad Thai Noodles",
       price: "$17.99",
