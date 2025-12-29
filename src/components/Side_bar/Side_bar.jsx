@@ -51,7 +51,7 @@ const Side_bar = ({ isOpen, onClose }) => {
         </nav>
 
         <div className="shrink-0 border-t border-slate-200 p-4 text-xs text-slate-500">
-          <button className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-[15px] font-bold text-slate-700 transition hover:bg-slate-100 active:scale-[0.99] cursor-pointer hover:bg-slate-300">
+          <button className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-[15px] font-bold text-slate-700 transition hover:bg-slate-100 active:scale-[0.99] cursor-pointer">
             Logout
             <LogOut size={18} />
           </button>
