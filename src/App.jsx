@@ -51,7 +51,6 @@ function App() {
             <Route path="/orders" element={<Orders />} />
             <Route path="/customers" element={<Customer />} />
             <Route path="/delivery" element={<Delivery />} />
-
           </Routes>
         </main>
       </Router>
