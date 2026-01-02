@@ -22,6 +22,10 @@ export default function DashboardOverview() {
   const [starFilter, setStarFilter] = React.useState("all");
   const [recentOrders, setRecentOrders] = useState([]);
   const [topReviews, setTopReviews] = useState([]);
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [activeUsers, setActiveUsers] = useState(0);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [totalUsers, setTotalUsers] = useState(0);
 
   // ============================================
   // StatCard Component (Nested Inside)
@@ -51,7 +55,8 @@ export default function DashboardOverview() {
             <span
               className={`text-sm font-medium ${
                 isNegative ? "text-red-800" : "text-green-800"
-              }`}>
+              }`}
+            >
               {change}
             </span>
             <span className="text-black text-sm">vs last month</span>
@@ -65,33 +70,112 @@ export default function DashboardOverview() {
   const stats = [
     {
       title: "Total Revenue",
-      value: "₹45,231.89",
+      value: `₹${totalRevenue.toLocaleString()}`,
       change: "20.1%",
       icon: IndianRupee,
       isNegative: false,
     },
     {
       title: "Active Users",
-      value: "2,350",
+      value: activeUsers.toString(),
       change: "15.3%",
       icon: Users,
       isNegative: false,
     },
     {
       title: "Total Orders",
-      value: "1,234",
+      value: totalOrders.toString(),
       change: "4.2%",
       icon: ShoppingCart,
       isNegative: true,
     },
     {
       title: "Total Users",
-      value: "487",
+      value: totalUsers.toString(),
       change: "8.7%",
       icon: UserPlus,
-      isNegative: false,
+      isNegative: true,
     },
   ];
+
+  // Fetch Total Revenue from Firebase (from orders with delivered status)
+  useEffect(() => {
+    const fetchRevenue = async () => {
+      try {
+        const ordersDocs = await getDocs(collection(db, "orders"));
+        const total = ordersDocs.docs.reduce((sum, doc) => {
+          const order = doc.data();
+          // Only add to total if order_status is "delivered"
+          if (
+            order.order_status === "delivered" &&
+            order.items &&
+            Array.isArray(order.items)
+          ) {
+            // Sum up prices from items array
+            const orderTotal = order.items.reduce(
+              (itemSum, item) => itemSum + (item.price || 0),
+              0
+            );
+            return sum + orderTotal;
+          }
+          return sum;
+        }, 0);
+        setTotalRevenue(total);
+      } catch (error) {
+        console.error("Error fetching revenue:", error);
+      }
+    };
+    fetchRevenue();
+  }, []);
+
+  // Fetch Active Users from Firebase
+  useEffect(() => {
+    const fetchActiveUsers = async () => {
+      try {
+        const usersDocs = await getDocs(collection(db, "Users"));
+        setActiveUsers(usersDocs.docs.length);
+      } catch (error) {
+        console.error("Error fetching active users:", error);
+      }
+    };
+    fetchActiveUsers();
+  }, []);
+
+  // Fetch Total Orders from Firebase (only delivered orders)
+  useEffect(() => {
+    const fetchTotalOrders = async () => {
+      try {
+        const ordersDocs = await getDocs(collection(db, "orders"));
+        console.log(
+          "All orders:",
+          ordersDocs.docs.map((doc) => doc.data())
+        );
+        const deliveredCount = ordersDocs.docs.filter((doc) => {
+          const orderData = doc.data();
+          console.log("Order status value:", orderData.order_status);
+          return orderData.order_status === "delivered";
+        }).length;
+        console.log("Delivered count:", deliveredCount);
+        setTotalOrders(deliveredCount);
+      } catch (error) {
+        console.error("Error fetching total orders:", error);
+      }
+    };
+    fetchTotalOrders();
+  }, []);
+
+  // Fetch Total Users from Firebase
+  useEffect(() => {
+    const fetchTotalUsers = async () => {
+      try {
+        const usersDocs = await getDocs(collection(db, "Users"));
+        setTotalUsers(usersDocs.docs.length);
+      } catch (error) {
+        console.error("Error fetching total users:", error);
+      }
+    };
+    fetchTotalUsers();
+  }, []);
 
   // Fetch recent orders from Firestore on component mount
   useEffect(() => {
@@ -136,19 +220,6 @@ export default function DashboardOverview() {
       </span>
     );
   };
-
-  // Top Reviews Data - Food Delivery Reviews
-  // const topReview = [
-  //   {
-  //     id: 1,
-  //     customer: "Sarah Johnson",
-  //     product: "Margherita Pizza",
-  //     rating: 5,
-  //     comment:
-  //       "Best pizza in town! Fresh ingredients and delivered hot. Will order again!",
-  //     date: "2 days ago",
-  //   },
-  // ];
 
   // Filter reviews based on selected star rating
   const filteredReviews =
@@ -210,7 +281,8 @@ export default function DashboardOverview() {
               {recentOrders.map((order) => (
                 <div
                   key={order.id}
-                  className="border-b border-slate-700 pb-4 last:border-b-0 hover:bg-slate-700/30 rounded-lg p-3 transition-colors duration-200">
+                  className="border-b border-slate-700 pb-4 last:border-b-0 hover:bg-slate-700/30 rounded-lg p-3 transition-colors duration-200"
+                >
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <h3 className="text-black font-semibold">{order.name}</h3>
@@ -224,7 +296,8 @@ export default function DashboardOverview() {
                     <span
                       className={`text-sm font-medium ${getStatusColor(
                         order.status
-                      )}`}>
+                      )}`}
+                    >
                       {order.status}
                     </span>
                   </div>
@@ -247,7 +320,8 @@ export default function DashboardOverview() {
                 <select
                   value={starFilter}
                   onChange={(e) => setStarFilter(e.target.value)}
-                  className="bg-white text-black border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer hover:bg-stone-400 transition-colors duration-200 focus:outline-none  appearance-none pr-8">
+                  className="bg-white text-black border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer hover:bg-stone-400 transition-colors duration-200 focus:outline-none  appearance-none pr-8"
+                >
                   <option value="all">All Stars</option>
                   <option value="5">⭐⭐⭐⭐⭐ 5 Stars</option>
                   <option value="4">⭐⭐⭐⭐ 4 Stars</option>
@@ -261,7 +335,8 @@ export default function DashboardOverview() {
                     className="w-4 h-4 text-black"
                     fill="none"
                     stroke="currentColor"
-                    viewBox="0 0 24 24">
+                    viewBox="0 0 24 24"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -279,10 +354,11 @@ export default function DashboardOverview() {
                 filteredReviews.map((review) => (
                   <div
                     key={review.id}
-                    className="border-b border-slate-700 pb-4 last:border-b-0 hover:bg-slate-700/30 rounded-lg p-3 transition-colors duration-200">
+                    className="border-b border-slate-700 pb-4 last:border-b-0 hover:bg-slate-700/30 rounded-lg p-3 transition-colors duration-200"
+                  >
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
-                        <h3 className="text-black font-semibold">
+                        <h3 className="text-black font-semibold text-lg mb-1">
                           {review.name}
                         </h3>
                         <p className="text-black text-sm mb-2">
@@ -303,7 +379,7 @@ export default function DashboardOverview() {
                           ))}
                         </div>
 
-                        <p className="text-black text-sm mb-2">
+                        <p className="text-black text-sm mb-2 font-bold">
                           {review.comment}
                         </p>
                       </div>
