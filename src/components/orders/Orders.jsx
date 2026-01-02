@@ -6,7 +6,7 @@ import { formatDistanceToNow } from "date-fns";
 
 const Orders = () => {
   const [activeFilter, setActiveFilter] = useState("all");
-  // CHANGED: Removed allOrders array completely
+
   const [allOrders, setAllOrders] = useState([]);
 
   //order data fetching from firebase
