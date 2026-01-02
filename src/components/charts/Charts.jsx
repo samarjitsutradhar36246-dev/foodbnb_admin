@@ -111,9 +111,9 @@ export default function DashboardOverview() {
             order.items &&
             Array.isArray(order.items)
           ) {
-            // Sum up prices from items array
+            // Sum up (price * quantity) from items array
             const orderTotal = order.items.reduce(
-              (itemSum, item) => itemSum + (item.price || 0),
+              (itemSum, item) => itemSum + (item.price || 0) * (item.qnt || 1),
               0
             );
             return sum + orderTotal;
