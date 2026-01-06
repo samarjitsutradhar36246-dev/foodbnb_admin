@@ -74,7 +74,6 @@ export default function DashboardOverview() {
   // ============================================
   const StatCard = ({
     title,
-    value,
     change,
     icon: Icon,
     isNegative,
@@ -113,8 +112,7 @@ export default function DashboardOverview() {
             <span
               className={`text-sm font-medium ${
                 isNegative ? "text-red-800" : "text-green-800"
-              }`}
-            >
+              }`}>
               {change}
             </span>
             <span className="text-black text-sm">vs last month</span>
@@ -344,8 +342,7 @@ export default function DashboardOverview() {
               {recentOrders.map((order) => (
                 <div
                   key={order.id}
-                  className="border-b border-slate-700 pb-4 last:border-b-0 hover:bg-slate-700/30 rounded-lg p-3 transition-colors duration-200"
-                >
+                  className="border-b border-slate-700 pb-4 last:border-b-0 hover:bg-slate-700/30 rounded-lg p-3 transition-colors duration-200">
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <h3 className="text-black font-semibold">{order.name}</h3>
@@ -359,8 +356,7 @@ export default function DashboardOverview() {
                     <span
                       className={`text-sm font-medium ${getStatusColor(
                         order.status
-                      )}`}
-                    >
+                      )}`}>
                       {order.status}
                     </span>
                   </div>
@@ -383,8 +379,7 @@ export default function DashboardOverview() {
                 <select
                   value={starFilter}
                   onChange={(e) => setStarFilter(e.target.value)}
-                  className="bg-white text-black border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer hover:bg-stone-400 transition-colors duration-200 focus:outline-none  appearance-none pr-8"
-                >
+                  className="bg-white text-black border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer hover:bg-stone-400 transition-colors duration-200 focus:outline-none  appearance-none pr-8">
                   <option value="all">All Stars</option>
                   <option value="5">⭐⭐⭐⭐⭐ 5 Stars</option>
                   <option value="4">⭐⭐⭐⭐ 4 Stars</option>
@@ -398,8 +393,7 @@ export default function DashboardOverview() {
                     className="w-4 h-4 text-black"
                     fill="none"
                     stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
+                    viewBox="0 0 24 24">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -417,8 +411,7 @@ export default function DashboardOverview() {
                 filteredReviews.map((review) => (
                   <div
                     key={review.id}
-                    className="border-b border-slate-700 pb-4 last:border-b-0 hover:bg-slate-700/30 rounded-lg p-3 transition-colors duration-200"
-                  >
+                    className="border-b border-slate-700 pb-4 last:border-b-0 hover:bg-slate-700/30 rounded-lg p-3 transition-colors duration-200">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
                         <h3 className="text-black font-semibold text-lg mb-1">
