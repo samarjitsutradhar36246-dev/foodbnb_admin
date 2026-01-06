@@ -1,21 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { TrendingUp, TrendingDown, Users } from "lucide-react";
-// CHANGED: Added Firebase imports to fetch user count from Firestore
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "../../Firebase"; // Adjust the path to your firebase config file
+import { db } from "../../Firebase";
 
 // --- Sub-component for Number Animation ---
 const AnimatedNumber = ({ value, duration = 1000 }) => {
   const [count, setCount] = useState(0);
-  // Parse the number: remove symbols like $, %, or commas
   const numericValue = Number(value.replace(/[^0-9.-]+/g, ""));
-  const suffix = value.replace(/[0-9.,-]+/g, ""); // Extract $, % etc
+  const suffix = value.replace(/[0-9.,-]+/g, "");
   const isPrefix = value.startsWith(suffix);
 
   useEffect(() => {
     let start = 0;
     const end = numericValue;
-    const increment = end / (duration / 16); // ~60fps
+    const increment = end / (duration / 16);
 
     const timer = setInterval(() => {
       start += increment;
@@ -30,7 +28,6 @@ const AnimatedNumber = ({ value, duration = 1000 }) => {
     return () => clearInterval(timer);
   }, [numericValue, duration]);
 
-  // Format with commas and original symbols
   const formatted = count.toLocaleString(undefined, {
     maximumFractionDigits: numericValue % 1 === 0 ? 0 : 2,
   });
@@ -39,21 +36,13 @@ const AnimatedNumber = ({ value, duration = 1000 }) => {
 };
 
 const Analytics = () => {
-  // State to trigger progress bar animations
   const [isLoaded, setIsLoaded] = useState(false);
-  // CHANGED: Added state to store new customers count (users with total_orders 0 or 1)
   const [totalUsers, setTotalUsers] = useState(0);
-  // CHANGED: Added state to store repeat customers count (users with total_orders > 10)
   const [repeatCustomers, setRepeatCustomers] = useState(0);
-  // CHANGED: Added state to store total customers count (new + repeat)
   const [totalCustomers, setTotalCustomers] = useState(0);
-  // CHANGED: Added state to store cancelled orders count
   const [cancelledOrders, setCancelledOrders] = useState(0);
-  // CHANGED: Added loading state to show loading indicator while fetching data
   const [loading, setLoading] = useState(true);
-  // CHANGED: Added state to store average order value
   const [avgOrderValue, setAvgOrderValue] = useState(0);
-  // CHANGED: Added state to store revenue data from Firebase orders collection
   const [revenueData, setRevenueData] = useState([
     { month: "Dec", revenue: "₹0", orders: "0 orders", percentage: 0 },
     { month: "Jan", revenue: "₹0", orders: "0 orders", percentage: 0 },
@@ -64,15 +53,11 @@ const Analytics = () => {
   ]);
   const [totalRevenue, setTotalRevenue] = useState(0);
 
-  // CHANGED: New function to fetch orders data from Firebase "orders" collection
   const fetchOrdersData = async () => {
     try {
       const ordersCollection = collection(db, "orders");
-
-      // Fetch both delivered and cancelled orders
       const allOrdersSnapshot = await getDocs(ordersCollection);
 
-      // Initialize month data for Dec, Jan, Feb, Mar, Apr, May
       const monthData = {
         Dec: { delivered: 0, cancelled: 0, count: 0 },
         Jan: { delivered: 0, cancelled: 0, count: 0 },
@@ -82,49 +67,31 @@ const Analytics = () => {
         May: { delivered: 0, cancelled: 0, count: 0 },
       };
 
-      let totalDelivered = 0;
-      let totalCancelled = 0;
-      let cancelledCount = 0; // CHANGED: Count cancelled orders
+      let cancelledCount = 0;
       const sixMonthsAgo = new Date();
       sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-      // Process each order (both delivered and cancelled)
       allOrdersSnapshot.forEach((doc) => {
         const orderData = doc.data();
         const orderStatus = orderData.order_status;
-        console.log("🔍 FULL ORDER DATA:", orderData);
-        console.log("📊 Order Status:", orderStatus);
 
-        // CHANGED: Count cancelled orders
         if (orderStatus === "cancelled") {
           cancelledCount++;
         }
 
-        // Skip orders that are not delivered or cancelled
         if (orderStatus !== "delivered" && orderStatus !== "cancelled") {
           return;
         }
 
-        // Calculate total price by summing all items in the order
         let totalPrice = 0;
 
-        // Check if items array exists
         if (orderData.items && Array.isArray(orderData.items)) {
-          console.log("📦 Items array found:", orderData.items);
-          orderData.items.forEach((item, index) => {
+          orderData.items.forEach((item) => {
             const itemPrice = parseFloat(item.price) || 0;
             const itemQnt = parseFloat(item.qnt) || 1;
             totalPrice += itemPrice * itemQnt;
-            console.log(
-              `📦 Item ${index}: ${
-                item.name
-              }, Price: ${itemPrice}, Qty: ${itemQnt}, Subtotal: ${
-                itemPrice * itemQnt
-              }`
-            );
           });
         } else {
-          // Fallback: Check for numbered keys (0, 1, 2, etc.)
           Object.keys(orderData).forEach((key) => {
             if (!isNaN(key)) {
               const item = orderData[key];
@@ -132,31 +99,18 @@ const Analytics = () => {
                 const itemPrice = parseFloat(item.price) || 0;
                 const itemQnt = parseFloat(item.qnt) || 1;
                 totalPrice += itemPrice * itemQnt;
-                console.log(
-                  `📦 Item ${key}: ${
-                    item.name
-                  }, Price: ${itemPrice}, Qty: ${itemQnt}, Subtotal: ${
-                    itemPrice * itemQnt
-                  }`
-                );
               }
             }
           });
         }
 
-        console.log("💰 Total Order Price:", totalPrice);
-        console.log("📊 Status:", orderStatus);
-
         const time = orderData.time;
-        console.log("📅 Time field:", time);
-
-        // Extract month from time field
         let month = "";
         let orderDate = null;
         if (time) {
           orderDate =
             time.toDate instanceof Function ? time.toDate() : new Date(time);
-          const monthIndex = orderDate.getMonth(); // 0-11
+          const monthIndex = orderDate.getMonth();
           const monthNames = [
             "Jan",
             "Feb",
@@ -174,32 +128,18 @@ const Analytics = () => {
           month = monthNames[monthIndex];
         }
 
-        // Add to corresponding month if it exists in our display data
         if (monthData[month] !== undefined) {
           if (orderStatus === "delivered") {
             monthData[month].delivered += totalPrice;
             monthData[month].count += 1;
-            console.log("✅ Added to delivered for", month, ":", totalPrice);
           } else if (orderStatus === "cancelled") {
             monthData[month].cancelled += totalPrice;
-            console.log("❌ Added to cancelled for", month, ":", totalPrice);
-          }
-        }
-
-        // Add to total revenue only if order is within last 6 months
-        if (orderDate && orderDate >= sixMonthsAgo) {
-          if (orderStatus === "delivered") {
-            totalDelivered += totalPrice;
-          } else if (orderStatus === "cancelled") {
-            totalCancelled += totalPrice;
           }
         }
       });
 
-      // CHANGED: Set cancelled orders count
       setCancelledOrders(cancelledCount);
 
-      // Calculate average order value for delivered orders
       const deliveredOrdersCount = Object.values(monthData).reduce(
         (sum, month) => sum + month.count,
         0
@@ -214,15 +154,10 @@ const Analytics = () => {
         setAvgOrderValue(avgValue);
       }
 
-      // Find max total (delivered + cancelled) for percentage calculation
       const maxTotal = Math.max(
         ...Object.values(monthData).map((m) => m.delivered + m.cancelled)
       );
 
-      console.log("📊 Month Data Summary:", monthData);
-      console.log("📊 Max Total (Delivered + Cancelled):", maxTotal);
-
-      // Update revenue data state in Dec, Jan, Feb, Mar, Apr, May order
       const updatedRevenueData = [
         {
           month: "Dec",
@@ -287,7 +222,6 @@ const Analytics = () => {
       ];
 
       setRevenueData(updatedRevenueData);
-      // Sum of delivered revenue for the displayed months
       const totalDeliveredRevenue = Object.values(monthData).reduce(
         (sum, month) => sum + month.delivered,
         0
@@ -299,20 +233,17 @@ const Analytics = () => {
     }
   };
 
-  // CHANGED: New function to fetch total users from Firebase "Users" collection
   const fetchTotalUsers = async () => {
     try {
       const usersCollection = collection(db, "Users");
       const userSnapshot = await getDocs(usersCollection);
 
-      // CHANGED: Count new customers (users with total_orders 0 or 1)
       let newCustomerCount = 0;
-      // CHANGED: Count repeat customers (users with total_orders > 10)
       let repeatCount = 0;
 
       userSnapshot.forEach((doc) => {
         const userData = doc.data();
-        const totalOrders = userData.total_orders || 0; // Default to 0 if field doesn't exist
+        const totalOrders = userData.total_orders || 0;
 
         if (totalOrders === 0 || totalOrders === 1) {
           newCustomerCount++;
@@ -325,9 +256,9 @@ const Analytics = () => {
 
       const totalCust = newCustomerCount + repeatCount;
 
-      setTotalUsers(newCustomerCount); // New customers count
-      setRepeatCustomers(repeatCount); // Repeat customers count
-      setTotalCustomers(totalCust); // Total customers (for retention calculation)
+      setTotalUsers(newCustomerCount);
+      setRepeatCustomers(repeatCount);
+      setTotalCustomers(totalCust);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -337,16 +268,10 @@ const Analytics = () => {
 
   useEffect(() => {
     setIsLoaded(true);
-    // CHANGED: Call fetchTotalUsers and fetchOrdersData on component mount
     fetchTotalUsers();
     fetchOrdersData();
   }, []);
 
-  // CHANGED: Updated stats cards to use dynamic data from Firebase
-  // New Customers: users with total_orders 0 or 1
-  // Repeat Customers: users with total_orders > 10
-  // Customer Retention: percentage of repeat customers out of total customers
-  // Avg. Order Value: average price of delivered orders
   const retentionPercentage =
     totalCustomers > 0
       ? ((repeatCustomers / totalCustomers) * 100).toFixed(1)
