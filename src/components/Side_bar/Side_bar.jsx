@@ -18,7 +18,7 @@ const navItems = [
   { label: "Dashboard", icon: Home, href: "/charts" },
   { label: "Customers", icon: Users, href: "/customers" },
   { label: "Orders", icon: ShoppingBag, href: "/orders" },
-  { label: "Restaurant", icon: Utensils, href: "/restaurant" },
+  { label: "Mom's Kitchen", icon: Utensils, href: "/restaurant" },
   { label: "Delivery", icon: PackageOpen, href: "/delivery" },
   { label: "Analytics", icon: PieChart, href: "/analytics" },
   { label: "Settings", icon: Settings, href: "/settings" },
