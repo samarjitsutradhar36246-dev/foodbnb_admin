@@ -13,7 +13,7 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../Firebase";
 import { formatDistanceToNow } from "date-fns";
 
-// Global cache to prevent redundant Firebase calls
+// Global cache to prevent redundant Firebase calls (persists across route changes)
 let dataCache = {
   revenue: null,
   orders: null,
@@ -21,6 +21,7 @@ let dataCache = {
   recentOrders: null,
   reviews: null,
   lastFetch: null,
+  hasAnimated: false, // Track if animation has run
 };
 
 // ============================================
@@ -28,13 +29,22 @@ let dataCache = {
 // ============================================
 const AnimatedNumber = ({
   value,
-  duration = 4000,
+  duration = 1000,
   prefix = "",
   suffix = "",
 }) => {
-  const [displayValue, setDisplayValue] = useState(0);
+  const [displayValue, setDisplayValue] = useState(() => {
+    // Initialize with final value if already animated, otherwise start at 0
+    return dataCache.hasAnimated ? value : 0;
+  });
 
   useEffect(() => {
+    // Skip animation if data is from cache (already animated before)
+    if (dataCache.hasAnimated) {
+      return;
+    }
+
+    // Animate only on fresh data fetch
     let startTime;
     let animationId;
 
@@ -53,8 +63,19 @@ const AnimatedNumber = ({
 
     animationId = requestAnimationFrame(animate);
 
-    return () => cancelAnimationFrame(animationId);
+    return () => {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+    };
   }, [value, duration]);
+
+  // Mark animation as complete after first render cycle
+  useEffect(() => {
+    if (!dataCache.hasAnimated && displayValue === value) {
+      dataCache.hasAnimated = true;
+    }
+  }, [displayValue, value]);
 
   return (
     <span>
@@ -333,7 +354,7 @@ export default function DashboardOverview() {
           {/* Recent Orders Box */}
           <div className="bg-white from-slate-800 to-slate-900 rounded-2xl p-6 shadow-lg border-2 border-gray-300">
             <h2 className="text-black text-xl font-bold mb-6">
-              All Recent Orders (Last 12 Hours)
+              Recent Orders (Last 12 Hours)
             </h2>
 
             {/* Scrollable Orders List */}
@@ -368,7 +389,7 @@ export default function DashboardOverview() {
                     <div className="mb-2 ml-2">
                       {order.items.map((item, idx) => (
                         <p key={idx} className="text-slate-700 text-sm">
-                          • {item.name} × {item.qnt}  ₹{item.price}
+                          • {item.name} × {item.qnt} - ₹{item.price}
                         </p>
                       ))}
                     </div>
@@ -449,9 +470,6 @@ export default function DashboardOverview() {
                         <h3 className="text-black font-semibold text-lg mb-1">
                           {review.name}
                         </h3>
-                        <p className="text-black text-sm mb-2 font-medium">
-                          {review.kitchenName}
-                        </p>
                         <p className="text-black text-sm mb-2">
                           {review.product}
                         </p>
