@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import {
   IndianRupee,
-  Users,
   ShoppingCart,
   UserPlus,
   TrendingUp,
@@ -13,6 +12,16 @@ import {
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../Firebase";
 import { formatDistanceToNow } from "date-fns";
+
+// Global cache to prevent redundant Firebase calls
+let dataCache = {
+  revenue: null,
+  orders: null,
+  users: null,
+  recentOrders: null,
+  reviews: null,
+  lastFetch: null,
+};
 
 // ============================================
 // AnimatedNumber Component
@@ -65,9 +74,9 @@ export default function DashboardOverview() {
   const [recentOrders, setRecentOrders] = useState([]);
   const [topReviews, setTopReviews] = useState([]);
   const [totalRevenue, setTotalRevenue] = useState(0);
-  const [activeUsers, setActiveUsers] = useState(0);
   const [totalOrders, setTotalOrders] = useState(0);
   const [totalUsers, setTotalUsers] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   // ============================================
   // StatCard Component (Nested Inside)
@@ -122,7 +131,112 @@ export default function DashboardOverview() {
     );
   };
 
-  // Dashboard Statistics Data
+  // Fetch all data from Firebase with caching
+  useEffect(() => {
+    const fetchAllData = async () => {
+      // Check if data is already cached
+      if (dataCache.lastFetch) {
+        setTotalRevenue(dataCache.revenue);
+        setTotalOrders(dataCache.orders);
+        setTotalUsers(dataCache.users);
+        setRecentOrders(dataCache.recentOrders);
+        setTopReviews(dataCache.reviews);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+
+        // Fetch orders data (single call)
+        const ordersDocs = await getDocs(collection(db, "orders"));
+        const ordersData = ordersDocs.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        // Calculate total revenue (only from delivered orders)
+        let revenue = 0;
+        let totalOrderQuantity = 0;
+
+        ordersData.forEach((order) => {
+          if (
+            order.orderStatus === "delivered" &&
+            order.items &&
+            Array.isArray(order.items)
+          ) {
+            order.items.forEach((item) => {
+              revenue += (item.price || 0) * (item.qnt || 1);
+              totalOrderQuantity += item.qnt || 1;
+            });
+          }
+        });
+
+        // Filter recent orders (last 12 hours)
+        const twelveHoursAgo = new Date();
+        twelveHoursAgo.setHours(twelveHoursAgo.getHours() - 12);
+
+        const recentOrdersList = ordersData
+          .filter((order) => {
+            if (!order.time) return false;
+            const orderTime = order.time.toDate();
+            return orderTime >= twelveHoursAgo;
+          })
+          .map((order) => ({
+            id: order.id,
+            name: order.name || "N/A",
+            kitchenName: order.kitchenName || "N/A",
+            address: order.address || "N/A",
+            orderStatus: order.orderStatus || "pending",
+            time: order.time,
+            items: order.items || [],
+            totalPrice: order.items
+              ? order.items.reduce(
+                  (sum, item) => sum + (item.price || 0) * (item.qnt || 1),
+                  0
+                )
+              : 0,
+          }))
+          .sort((a, b) => b.time.toDate() - a.time.toDate()); // Sort by most recent
+
+        // Fetch users data (single call)
+        const usersDocs = await getDocs(collection(db, "users"));
+        const usersCount = usersDocs.docs.length;
+
+        // Fetch reviews data (single call)
+        const reviewsDocs = await getDocs(collection(db, "reviews"));
+        const reviewsData = reviewsDocs.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        // Cache the data
+        dataCache = {
+          revenue,
+          orders: totalOrderQuantity,
+          users: usersCount,
+          recentOrders: recentOrdersList,
+          reviews: reviewsData,
+          lastFetch: new Date(),
+        };
+
+        // Update state
+        setTotalRevenue(revenue);
+        setTotalOrders(totalOrderQuantity);
+        setTotalUsers(usersCount);
+        setRecentOrders(recentOrdersList);
+        setTopReviews(reviewsData);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchAllData();
+  }, []);
+
+  // Dashboard Statistics Data (removed Active Users card)
   const stats = [
     {
       title: "Total Revenue",
@@ -130,14 +244,6 @@ export default function DashboardOverview() {
       numericValue: totalRevenue,
       change: "20.1%",
       icon: IndianRupee,
-      isNegative: false,
-    },
-    {
-      title: "Active Users",
-      value: activeUsers.toString(),
-      numericValue: activeUsers,
-      change: "15.3%",
-      icon: Users,
       isNegative: false,
     },
     {
@@ -158,127 +264,18 @@ export default function DashboardOverview() {
     },
   ];
 
-  // Fetch Total Revenue from Firebase (from orders with delivered status)
-  useEffect(() => {
-    const fetchRevenue = async () => {
-      try {
-        const ordersDocs = await getDocs(collection(db, "orders"));
-        const total = ordersDocs.docs.reduce((sum, doc) => {
-          const order = doc.data();
-          // Only add to total if order_status is "delivered"
-          if (
-            order.order_status === "delivered" &&
-            order.items &&
-            Array.isArray(order.items)
-          ) {
-            // Sum up (price * quantity) from items array
-            const orderTotal = order.items.reduce(
-              (itemSum, item) => itemSum + (item.price || 0) * (item.qnt || 1),
-              0
-            );
-            return sum + orderTotal;
-          }
-          return sum;
-        }, 0);
-        setTotalRevenue(total);
-      } catch (error) {
-        console.error("Error fetching revenue:", error);
-      }
-    };
-    fetchRevenue();
-  }, []);
-
-  // Fetch Active Users from Firebase
-  useEffect(() => {
-    const fetchActiveUsers = async () => {
-      try {
-        const usersDocs = await getDocs(collection(db, "Users"));
-        setActiveUsers(usersDocs.docs.length);
-      } catch (error) {
-        console.error("Error fetching active users:", error);
-      }
-    };
-    fetchActiveUsers();
-  }, []);
-
-  // Fetch Total Orders from Firebase (only delivered orders)
-  useEffect(() => {
-    const fetchTotalOrders = async () => {
-      try {
-        const ordersDocs = await getDocs(collection(db, "orders"));
-        console.log(
-          "All orders:",
-          ordersDocs.docs.map((doc) => doc.data())
-        );
-        const deliveredCount = ordersDocs.docs.filter((doc) => {
-          const orderData = doc.data();
-          console.log("Order status value:", orderData.order_status);
-          return orderData.order_status === "delivered";
-        }).length;
-        console.log("Delivered count:", deliveredCount);
-        setTotalOrders(deliveredCount);
-      } catch (error) {
-        console.error("Error fetching total orders:", error);
-      }
-    };
-    fetchTotalOrders();
-  }, []);
-
-  // Fetch Total Users from Firebase
-  useEffect(() => {
-    const fetchTotalUsers = async () => {
-      try {
-        const usersDocs = await getDocs(collection(db, "Users"));
-        setTotalUsers(usersDocs.docs.length);
-      } catch (error) {
-        console.error("Error fetching total users:", error);
-      }
-    };
-    fetchTotalUsers();
-  }, []);
-
-  // Fetch recent orders from Firestore on component mount
-  useEffect(() => {
-    const fetchOrders = async () => {
-      const recentOrders = await getDocs(collection(db, "Recent_Orders"));
-      setRecentOrders(recentOrders.docs.map((doc) => doc.data()));
-    };
-    fetchOrders();
-  }, []);
-
   //for time ago format
   const OrderTime = ({ timestamp }) => {
-    // Convert the Firebase timestamp to a Date first
+    if (!timestamp || !timestamp.toDate) return <span>N/A</span>;
     const date = timestamp.toDate();
-
-    return (
-      <span>
-        {formatDistanceToNow(date, { addSuffix: true })}
-        {/* Outputs: "5 minutes ago" or "2 days ago" */}
-      </span>
-    );
+    return <span>{formatDistanceToNow(date, { addSuffix: true })}</span>;
   };
-
-  // Fetch top reviews from Firestore on component mount
-  useEffect(() => {
-    const fetchReviews = async () => {
-      const topReviews = await getDocs(collection(db, "reviews"));
-      setTopReviews(topReviews.docs.map((doc) => doc.data()));
-    };
-    fetchReviews();
-  }, []);
 
   //for time ago format
   const Time = ({ timestamp }) => {
-    // Convert the Firebase timestamp to a Date first
+    if (!timestamp || !timestamp.toDate) return <span>N/A</span>;
     const date = timestamp.toDate();
-
-    return (
-      <span>
-        {formatDistanceToNow(date, { addSuffix: true })}
-        {/* Outputs: "5 minutes ago" or "2 days ago" */}
-      </span>
-    );
+    return <span>{formatDistanceToNow(date, { addSuffix: true })}</span>;
   };
 
   // Filter reviews based on selected star rating
@@ -290,16 +287,16 @@ export default function DashboardOverview() {
   // Status badge color helper
   const getStatusColor = (status) => {
     switch (status) {
-      case "completed":
-        return "text-green-400";
+      case "delivered":
+        return "text-green-600 font-semibold";
       case "pending":
-        return "text-yellow-400";
+        return "text-yellow-600 font-semibold";
       case "processing":
-        return "text-blue-400";
+        return "text-blue-600 font-semibold";
       case "canceled":
-        return "text-red-400";
+        return "text-red-600 font-semibold";
       default:
-        return "text-slate-400";
+        return "text-slate-600 font-semibold";
     }
   };
 
@@ -316,8 +313,8 @@ export default function DashboardOverview() {
           </p>
         </div>
 
-        {/* Statistics Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+        {/* Statistics Grid - Now 3 cards instead of 4 */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
           {stats.map((stat, index) => (
             <StatCard
               key={index}
@@ -335,36 +332,67 @@ export default function DashboardOverview() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Orders Box */}
           <div className="bg-white from-slate-800 to-slate-900 rounded-2xl p-6 shadow-lg border-2 border-gray-300">
-            <h2 className="text-black text-xl font-bold mb-6">Recent Orders</h2>
+            <h2 className="text-black text-xl font-bold mb-6">
+              Recent Orders (Last 12 Hours)
+            </h2>
 
             {/* Scrollable Orders List */}
             <div className="space-y-4 max-h-125 overflow-y-auto pr-2 custom-scrollbar">
-              {recentOrders.map((order) => (
-                <div
-                  key={order.id}
-                  className="border-b border-slate-700 pb-4 last:border-b-0 hover:bg-slate-700/30 rounded-lg p-3 transition-colors duration-200">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h3 className="text-black font-semibold">{order.name}</h3>
-                      <p className="text-black text-sm">
-                        {order.order_details}
-                      </p>
-                    </div>
-                    <span className="text-black font-bold">₹{order.price}</span>
-                  </div>
-                  <div className="flex justify-end">
-                    <span
-                      className={`text-sm font-medium ${getStatusColor(
-                        order.status
-                      )}`}>
-                      {order.status}
-                    </span>
-                  </div>
-                  <span className="flex font-bold">
-                    {OrderTime({ timestamp: order.order_at })}
-                  </span>
+              {loading ? (
+                <div className="text-center py-8">
+                  <p className="text-black text-sm">Loading orders...</p>
                 </div>
-              ))}
+              ) : recentOrders.length > 0 ? (
+                recentOrders.map((order) => (
+                  <div
+                    key={order.id}
+                    className="border-b border-slate-300 pb-4 last:border-b-0 hover:bg-slate-100 rounded-lg p-3 transition-colors duration-200">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex-1">
+                        <h3 className="text-black font-semibold text-base">
+                          {order.name}
+                        </h3>
+                        <p className="text-slate-600 text-sm font-medium">
+                          {order.kitchenName}
+                        </p>
+                        <p className="text-slate-500 text-xs mt-1">
+                          {order.address}
+                        </p>
+                      </div>
+                      <span className="text-black font-bold text-lg">
+                        ₹{order.totalPrice.toLocaleString()}
+                      </span>
+                    </div>
+
+                    {/* Order Items */}
+                    <div className="mb-2 ml-2">
+                      {order.items.map((item, idx) => (
+                        <p key={idx} className="text-slate-700 text-sm">
+                          • {item.name} × {item.qnt} - ₹{item.price}
+                        </p>
+                      ))}
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span
+                        className={`text-sm ${getStatusColor(
+                          order.orderStatus
+                        )}`}>
+                        {order.orderStatus.toUpperCase()}
+                      </span>
+                      <span className="text-slate-500 text-xs font-medium">
+                        <OrderTime timestamp={order.time} />
+                      </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-slate-600 text-sm">
+                    No recent orders in the last 12 hours
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -379,7 +407,7 @@ export default function DashboardOverview() {
                 <select
                   value={starFilter}
                   onChange={(e) => setStarFilter(e.target.value)}
-                  className="bg-white text-black border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer hover:bg-stone-400 transition-colors duration-200 focus:outline-none  appearance-none pr-8">
+                  className="bg-white text-black border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer hover:bg-stone-400 transition-colors duration-200 focus:outline-none appearance-none pr-8">
                   <option value="all">All Stars</option>
                   <option value="5">⭐⭐⭐⭐⭐ 5 Stars</option>
                   <option value="4">⭐⭐⭐⭐ 4 Stars</option>
@@ -407,11 +435,15 @@ export default function DashboardOverview() {
 
             {/* Scrollable Reviews List */}
             <div className="space-y-4 max-h-125 overflow-y-auto pr-2 custom-scrollbar">
-              {filteredReviews.length > 0 ? (
+              {loading ? (
+                <div className="text-center py-8">
+                  <p className="text-black text-sm">Loading reviews...</p>
+                </div>
+              ) : filteredReviews.length > 0 ? (
                 filteredReviews.map((review) => (
                   <div
                     key={review.id}
-                    className="border-b border-slate-700 pb-4 last:border-b-0 hover:bg-slate-700/30 rounded-lg p-3 transition-colors duration-200">
+                    className="border-b border-slate-300 pb-4 last:border-b-0 hover:bg-slate-100 rounded-lg p-3 transition-colors duration-200">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
                         <h3 className="text-black font-semibold text-lg mb-1">
@@ -429,7 +461,7 @@ export default function DashboardOverview() {
                               className={`w-4 h-4 ${
                                 i < review.rating
                                   ? "fill-yellow-400 text-yellow-400"
-                                  : "text-black"
+                                  : "text-slate-300"
                               }`}
                             />
                           ))}
@@ -442,7 +474,7 @@ export default function DashboardOverview() {
                     </div>
                     <div className="flex justify-end">
                       <span className="text-black text-xs">
-                        {Time({ timestamp: review.time })}
+                        <Time timestamp={review.time} />
                       </span>
                     </div>
                   </div>
