@@ -23,5 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 
+# Environment variables
+.env
+.env.local
+
 # Ignore Firebase configuration file
 Firebase.jsx
+

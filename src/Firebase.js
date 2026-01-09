@@ -5,13 +5,13 @@ import { getAuth } from "firebase/auth";
 // TODO: Add SDKs for Firebase products that you want to use
 
 const firebaseConfig = {
-  apiKey: "AIzaSyB2MAFvoaf_nWQIXncXtBrpTvpKn05vmRs",
-  authDomain: "foodbnb-10778.firebaseapp.com",
-  projectId: "foodbnb-10778",
-  storageBucket: "foodbnb-10778.firebasestorage.app",
-  messagingSenderId: "217297623709",
-  appId: "1:217297623709:web:990ff29bd2f1df66021274",
-  measurementId: "G-NBGWX62336"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
