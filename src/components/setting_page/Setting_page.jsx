@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Globe,
   Bell,
@@ -14,37 +14,112 @@ import { doc, setDoc, getDoc } from "firebase/firestore";
 
 function Setting_page() {
   const [activeTab, setActiveTab] = useState("notifications");
-
-  // Notification toggles
   const [notifications, setNotifications] = useState(null);
-
-  // Menu settings toggles
   const [menuSettings, setMenuSettings] = useState(null);
+  const [deliverySettings, setDeliverySettings] = useState(null);
 
-  // Delivery settings
-  const [deliverySettings, setDeliverySettings] = useState({
-    minOrder: "10.00",
-    deliveryFee: "4.99",
-    deliveryRadius: "5",
-    avgPrepTime: "25",
-    avgDeliveryTime: "30",
+  // Track if data has been loaded to prevent refetching
+  const dataLoadedRef = useRef({
+    notifications: false,
+    menu: false,
+    delivery: false,
   });
-
-  // // Security settings
-  // const [securitySettings, setSecuritySettings] = useState({
-  //   currentPassword: "",
-  //   newPassword: "",
-  //   confirmPassword: "",
-  //   twoFactor: false,
-  // });
 
   const tabs = [
     { id: "notifications", label: "Notifications", icon: Bell },
     { id: "delivery", label: "Delivery", icon: Package },
     { id: "menu", label: "Menu Settings", icon: Utensils },
     { id: "payment", label: "Payment", icon: CreditCard },
-    // { id: "security", label: "Security", icon: Lock },
   ];
+
+  // Load all settings once on component mount
+  useEffect(() => {
+    const loadAllSettings = async () => {
+      try {
+        // Load notifications only if not already loaded
+        if (!dataLoadedRef.current.notifications) {
+          const notifSnap = await getDoc(
+            doc(db, "Delivery Settings", "Notification")
+          );
+          if (notifSnap.exists()) {
+            const data = notifSnap.data();
+            setNotifications({
+              newOrders: data.newOrder ?? true,
+              orderStatus: data.orderStatus ?? false,
+              lowStock: data.lowStock ?? true,
+              driverUpdates: data.driverUpdate ?? false,
+              weeklyReports: data.weeklyReport ?? false,
+            });
+          } else {
+            setNotifications({
+              newOrders: true,
+              orderStatus: false,
+              lowStock: true,
+              driverUpdates: false,
+              weeklyReports: false,
+            });
+          }
+          dataLoadedRef.current.notifications = true;
+        }
+
+        // Load menu settings only if not already loaded
+        if (!dataLoadedRef.current.menu) {
+          const menuSnap = await getDoc(
+            doc(db, "Delivery Settings", "menuSettting")
+          );
+          if (menuSnap.exists()) {
+            const data = menuSnap.data();
+            setMenuSettings({
+              autoDisable: data.autoDisable ?? false,
+              displayPrepTime: data.prepTime ?? true,
+              showRatings: data.ratingMenu ?? true,
+              taxRate: data.taxRate?.toString() || "5",
+            });
+          } else {
+            setMenuSettings({
+              autoDisable: false,
+              displayPrepTime: true,
+              showRatings: true,
+              taxRate: "5",
+            });
+          }
+          dataLoadedRef.current.menu = true;
+        }
+
+        // Load delivery settings only if not already loaded
+        if (!dataLoadedRef.current.delivery) {
+          const deliverySnap = await getDoc(
+            doc(db, "Delivery Settings", "settings")
+          );
+          if (deliverySnap.exists()) {
+            const data = deliverySnap.data();
+            setDeliverySettings({
+              minOrder: data.minimumOrderAmount?.toString() || "50",
+              deliveryFee: data.deliveryFee?.toString() || "8",
+              deliveryRadius:
+                data["deliveryRadius (miles)"]?.toString() || "10",
+              avgPrepTime: data.averagePreparationTime?.toString() || "20",
+              avgDeliveryTime: data.averageDeliveryTime?.toString() || "20",
+            });
+          } else {
+            setDeliverySettings({
+              minOrder: "50",
+              deliveryFee: "8",
+              deliveryRadius: "10",
+              avgPrepTime: "20",
+              avgDeliveryTime: "20",
+            });
+          }
+          dataLoadedRef.current.delivery = true;
+        }
+      } catch (error) {
+        console.error("Error loading settings:", error);
+        toast.error("Failed to load settings");
+      }
+    };
+
+    loadAllSettings();
+  }, []); // Only run once on mount
 
   const handleNotificationToggle = (key) => {
     setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -62,154 +137,15 @@ function Setting_page() {
     setDeliverySettings((prev) => ({ ...prev, [key]: value }));
   };
 
-  // const handleSecurityChange = (key, value) => {
-  //   setSecuritySettings((prev) => ({ ...prev, [key]: value }));
-  // };
-
-  // const handleSecurityToggle = () => {
-  //   setSecuritySettings((prev) => ({ ...prev, twoFactor: !prev.twoFactor }));
-  // };
-
-  // Load notification settings from Firebase
-  useEffect(() => {
-    const loadNotificationSettings = async () => {
-      try {
-        const snap = await getDoc(doc(db, "Delivery Settings", "Notification"));
-
-        if (snap.exists()) {
-          const data = snap.data();
-          console.log("Loaded notification data:", data);
-
-          setNotifications({
-            newOrders: data["New Orders"] ?? true,
-            orderStatus: data["Order Status"] ?? true,
-            lowStock: data["Low Stock"] ?? true,
-            driverUpdates: data["Driver Update"] ?? true,
-            weeklyReports: data["Weekly Reports"] ?? true,
-          });
-        } else {
-          console.log("No notification document found");
-          setNotifications({
-            newOrders: true,
-            orderStatus: true,
-            lowStock: true,
-            driverUpdates: true,
-            weeklyReports: true,
-          });
-        }
-      } catch (error) {
-        console.error("Error loading notification settings:", error);
-        setNotifications({
-          newOrders: true,
-          orderStatus: true,
-          lowStock: true,
-          driverUpdates: true,
-          weeklyReports: true,
-        });
-      }
-    };
-
-    loadNotificationSettings();
-  }, []);
-
-  // Load delivery settings from Firebase
-  useEffect(() => {
-    const loadDeliverySettings = async () => {
-      try {
-        const docSnap = await getDoc(doc(db, "Delivery Settings", "settings"));
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          setDeliverySettings({
-            minOrder: data["Minimum Order Amount"]?.toString() || "10.00",
-            deliveryFee: data["Delivery Fee"]?.toString() || "4.99",
-            deliveryRadius: data["Delivery Radius (miles)"]?.toString() || "5",
-            avgPrepTime:
-              data["Average Preparation Time (minutes)"]?.toString() || "25",
-            avgDeliveryTime:
-              data["Average Delivery Time (minutes)"]?.toString() || "30",
-          });
-        }
-      } catch (error) {
-        console.error("Error loading delivery settings:", error);
-      }
-    };
-
-    loadDeliverySettings();
-  }, []);
-
-  // Load menu settings from Firebase
-  useEffect(() => {
-    const loadMenuSettings = async () => {
-      try {
-        const snap = await getDoc(doc(db, "Delivery Settings", "Menu Setting"));
-
-        if (snap.exists()) {
-          const data = snap.data();
-          console.log("Loaded menu data:", data);
-
-          setMenuSettings({
-            autoDisable: data["Auto Disable"] ?? true,
-            displayPrepTime: data["Prep Time"] ?? true,
-            showRatings: data["Ratings"] ?? true,
-            taxRate: data["Tax Rate"]?.toString() || "8.5",
-          });
-        } else {
-          console.log("No menu document found");
-          setMenuSettings({
-            autoDisable: true,
-            displayPrepTime: true,
-            showRatings: true,
-            taxRate: "8.5",
-          });
-        }
-      } catch (error) {
-        console.error("Error loading menu settings:", error);
-        setMenuSettings({
-          autoDisable: true,
-          displayPrepTime: true,
-          showRatings: true,
-          taxRate: "8.5",
-        });
-      }
-    };
-
-    loadMenuSettings();
-  }, []);
-
-  const saveDeliverySettings = async () => {
-    try {
-      await setDoc(doc(db, "Delivery Settings", "settings"), {
-        "Minimum Order Amount": parseFloat(deliverySettings.minOrder) || 0,
-        "Delivery Fee": parseFloat(deliverySettings.deliveryFee) || 0,
-        "Delivery Radius (miles)":
-          parseFloat(deliverySettings.deliveryRadius) || 0,
-        "Average Preparation Time (minutes)":
-          parseFloat(deliverySettings.avgPrepTime) || 0,
-        "Average Delivery Time (minutes)":
-          parseFloat(deliverySettings.avgDeliveryTime) || 0,
-      });
-      toast.success("Delivery settings saved successfully!");
-    } catch (error) {
-      console.error("Error saving delivery settings:", error);
-      toast.error("Failed to save delivery settings. Please try again.");
-    }
-  };
-
   const saveNotificationSettings = async () => {
-    console.log("Saving notifications:", notifications);
     try {
-      await setDoc(
-        doc(db, "Delivery Settings", "Notification"),
-        {
-          "New Orders": notifications.newOrders,
-          "Order Status": notifications.orderStatus,
-          "Low Stock": notifications.lowStock,
-          "Driver Update": notifications.driverUpdates,
-          "Weekly Reports": notifications.weeklyReports,
-        },
-        { merge: true }
-      );
-      console.log("Save successful!");
+      await setDoc(doc(db, "Delivery Settings", "Notification"), {
+        newOrder: notifications.newOrders,
+        orderStatus: notifications.orderStatus,
+        lowStock: notifications.lowStock,
+        driverUpdate: notifications.driverUpdates,
+        weeklyReport: notifications.weeklyReports,
+      });
       toast.success("Notification settings saved successfully!");
     } catch (error) {
       console.error("Error saving notification settings:", error);
@@ -218,23 +154,34 @@ function Setting_page() {
   };
 
   const saveMenuSettings = async () => {
-    console.log("Saving menu settings:", menuSettings);
     try {
-      await setDoc(
-        doc(db, "Delivery Settings", "Menu Setting"),
-        {
-          "Auto Disable": menuSettings.autoDisable,
-          "Prep Time": menuSettings.displayPrepTime,
-          Ratings: menuSettings.showRatings,
-          "Tax Rate": parseFloat(menuSettings.taxRate) || 0,
-        },
-        { merge: true }
-      );
-      console.log("Menu save successful!");
+      await setDoc(doc(db, "Delivery Settings", "menuSettting"), {
+        autoDisable: menuSettings.autoDisable,
+        prepTime: menuSettings.displayPrepTime,
+        ratingMenu: menuSettings.showRatings,
+        taxRate: parseFloat(menuSettings.taxRate) || 0,
+      });
       toast.success("Menu settings saved successfully!");
     } catch (error) {
       console.error("Error saving menu settings:", error);
       toast.error("Failed to save menu settings");
+    }
+  };
+
+  const saveDeliverySettings = async () => {
+    try {
+      await setDoc(doc(db, "Delivery Settings", "settings"), {
+        minimumOrderAmount: parseFloat(deliverySettings.minOrder) || 0,
+        deliveryFee: parseFloat(deliverySettings.deliveryFee) || 0,
+        "deliveryRadius (miles)":
+          parseFloat(deliverySettings.deliveryRadius) || 0,
+        averagePreparationTime: parseFloat(deliverySettings.avgPrepTime) || 0,
+        averageDeliveryTime: parseFloat(deliverySettings.avgDeliveryTime) || 0,
+      });
+      toast.success("Delivery settings saved successfully!");
+    } catch (error) {
+      console.error("Error saving delivery settings:", error);
+      toast.error("Failed to save delivery settings. Please try again.");
     }
   };
 
@@ -462,126 +409,117 @@ function Setting_page() {
                       Delivery Settings
                     </h2>
 
-                    <div className="space-y-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-900 mb-2">
-                          Minimum Order Amount
-                        </label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                            ₹
-                          </span>
-                          <input
-                            type="text"
-                            value={deliverySettings.minOrder}
-                            onChange={(e) =>
-                              handleDeliveryChange("minOrder", e.target.value)
-                            }
-                            className="w-full pl-8 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                          />
+                    {deliverySettings === null ? (
+                      <p className="text-gray-500">
+                        Loading delivery settings...
+                      </p>
+                    ) : (
+                      <>
+                        <div className="space-y-6">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-900 mb-2">
+                              Minimum Order Amount
+                            </label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                                ₹
+                              </span>
+                              <input
+                                type="text"
+                                value={deliverySettings.minOrder}
+                                onChange={(e) =>
+                                  handleDeliveryChange(
+                                    "minOrder",
+                                    e.target.value
+                                  )
+                                }
+                                className="w-full pl-8 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-900 mb-2">
+                              Delivery Fee
+                            </label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                                ₹
+                              </span>
+                              <input
+                                type="text"
+                                value={deliverySettings.deliveryFee}
+                                onChange={(e) =>
+                                  handleDeliveryChange(
+                                    "deliveryFee",
+                                    e.target.value
+                                  )
+                                }
+                                className="w-full pl-8 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-900 mb-2">
+                              Delivery Radius (miles)
+                            </label>
+                            <input
+                              type="text"
+                              value={deliverySettings.deliveryRadius}
+                              onChange={(e) =>
+                                handleDeliveryChange(
+                                  "deliveryRadius",
+                                  e.target.value
+                                )
+                              }
+                              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-900 mb-2">
+                              Average Preparation Time (minutes)
+                            </label>
+                            <input
+                              type="text"
+                              value={deliverySettings.avgPrepTime}
+                              onChange={(e) =>
+                                handleDeliveryChange(
+                                  "avgPrepTime",
+                                  e.target.value
+                                )
+                              }
+                              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-900 mb-2">
+                              Average Delivery Time (minutes)
+                            </label>
+                            <input
+                              type="text"
+                              value={deliverySettings.avgDeliveryTime}
+                              onChange={(e) =>
+                                handleDeliveryChange(
+                                  "avgDeliveryTime",
+                                  e.target.value
+                                )
+                              }
+                              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            />
+                          </div>
                         </div>
-                      </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-900 mb-2">
-                          Delivery Fee
-                        </label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                            ₹
-                          </span>
-                          <input
-                            type="text"
-                            value={deliverySettings.deliveryFee}
-                            onChange={(e) =>
-                              handleDeliveryChange(
-                                "deliveryFee",
-                                e.target.value
-                              )
-                            }
-                            className="w-full pl-8 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-900 mb-2">
-                          Delivery Radius (miles)
-                        </label>
-                        <input
-                          type="text"
-                          value={deliverySettings.deliveryRadius}
-                          onChange={(e) =>
-                            handleDeliveryChange(
-                              "deliveryRadius",
-                              e.target.value
-                            )
-                          }
-                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-900 mb-2">
-                          Average Preparation Time (minutes)
-                        </label>
-                        <input
-                          type="text"
-                          value={deliverySettings.avgPrepTime}
-                          onChange={(e) =>
-                            handleDeliveryChange("avgPrepTime", e.target.value)
-                          }
-                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-900 mb-2">
-                          Average Delivery Time (minutes)
-                        </label>
-                        <input
-                          type="text"
-                          value={deliverySettings.avgDeliveryTime}
-                          onChange={(e) =>
-                            handleDeliveryChange(
-                              "avgDeliveryTime",
-                              e.target.value
-                            )
-                          }
-                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-900 mb-2">
-                          Platform Fee
-                        </label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                            ₹
-                          </span>
-                          <input
-                            type="text"
-                            value={deliverySettings.deliveryFee}
-                            onChange={(e) =>
-                              handleDeliveryChange(
-                                "deliveryFee",
-                                e.target.value
-                              )
-                            }
-                            className="w-full pl-8 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                          />
-                        </div>
-                      </div>
-                      
-                    </div>
-
-                    <button
-                      onClick={saveDeliverySettings}
-                      className="mt-8 flex items-center gap-2 px-6 py-2.5 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition">
-                      <Check size={18} />
-                      Save Changes
-                    </button>
+                        <button
+                          onClick={saveDeliverySettings}
+                          className="mt-8 flex items-center gap-2 px-6 py-2.5 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition">
+                          <Check size={18} />
+                          Save Changes
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
 
@@ -715,8 +653,6 @@ function Setting_page() {
                     </p>
                   </div>
                 )}
-
-                {/* Security Tab */}
               </div>
             </div>
           </div>

@@ -84,7 +84,7 @@ export default function DashboardOverview() {
         {/* Card Header */}
         <div className="flex items-start justify-between mb-4">
           <h3 className="text-black text-sm font-medium">{title}</h3>
-          <div className="bg-stone-200/50 p-2 rounded-lg group-hover:bg-slate-700 transition-colors duration-300">
+          <div className="bg-stone-200/50 p-2 rounded-lg hover:bg-slate-700 transition-colors duration-300">
             <Icon className="w-5 h-5 text-black" />
           </div>
         </div>

@@ -1,8 +1,11 @@
 import { MapPin, Star, Clock } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
+import { MapPin, Star, Clock } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../Firebase";
 
+const RestaurantDisplay = () => {
 const RestaurantDisplay = () => {
   const [activeFilter, setActiveFilter] = useState("all");
   const [allRestaurants, setAllRestaurants] = useState([]);
@@ -10,9 +13,16 @@ const RestaurantDisplay = () => {
   const [error, setError] = useState(null);
   const isMountedRef = useRef(true);
   const hasLoadedRef = useRef(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const isMountedRef = useRef(true);
+  const hasLoadedRef = useRef(false);
 
   // Fetch restaurants from Firebase with proper cleanup
+  // Fetch restaurants from Firebase with proper cleanup
   useEffect(() => {
+    isMountedRef.current = true;
+
     isMountedRef.current = true;
 
     const fetchRestaurants = async () => {
@@ -50,6 +60,10 @@ const RestaurantDisplay = () => {
             closeTime: data.closeTime || "N/A",
             phone: data.phone || "N/A",
             email: data.email || "N/A",
+            openTime: data.openTime || "N/A",
+            closeTime: data.closeTime || "N/A",
+            phone: data.phone || "N/A",
+            email: data.email || "N/A",
             revenue: parseFloat(data.revenue) || 0,
           };
         });
@@ -74,7 +88,14 @@ const RestaurantDisplay = () => {
       }
     };
 
+
     fetchRestaurants();
+
+    // Cleanup function
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []); // Empty dependency array - only run once
 
     // Cleanup function
     return () => {
@@ -149,13 +170,16 @@ const RestaurantDisplay = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
             Mom's Kitchen Management
+            Mom's Kitchen Management
           </h1>
           <p className="text-sm text-gray-600 mt-1">
+            Track and manage all registered Kitchens
             Track and manage all registered Kitchens
           </p>
         </div>
@@ -167,8 +191,7 @@ const RestaurantDisplay = () => {
               className="w-4 h-4"
               fill="none"
               stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+              viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -185,8 +208,7 @@ const RestaurantDisplay = () => {
                 activeFilter === "all"
                   ? "bg-gray-500 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
+              }`}>
               All Restaurants ({getFilterCount("all")})
             </button>
             <button
@@ -195,8 +217,7 @@ const RestaurantDisplay = () => {
                 activeFilter === "open"
                   ? "bg-green-500 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
+              }`}>
               Open ({getFilterCount("open")})
             </button>
             <button
@@ -205,8 +226,7 @@ const RestaurantDisplay = () => {
                 activeFilter === "closed"
                   ? "bg-red-500 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
+              }`}>
               Closed ({getFilterCount("closed")})
             </button>
             <button
@@ -215,8 +235,7 @@ const RestaurantDisplay = () => {
                 activeFilter === "temporarily closed"
                   ? "bg-yellow-500 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
+              }`}>
               Temporarily Closed ({getFilterCount("temporarily closed")})
             </button>
           </div>
@@ -224,6 +243,7 @@ const RestaurantDisplay = () => {
 
         {/* Restaurants Grid */}
         {filteredRestaurants.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredRestaurants.map((restaurant) => (
               <div
@@ -322,6 +342,23 @@ const RestaurantDisplay = () => {
                   <div className="flex items-start gap-2 text-sm text-gray-600 mb-3">
                     <MapPin size={16} className="mt-0.5 shrink-0" />
                     <p>{restaurant.locationName || "N/A"}</p>
+                    <p>{restaurant.locationName || "N/A"}</p>
+                  </div>
+
+                  {/* Info Row */}
+                  <div className="grid grid-cols-2 gap-3 py-3 border-y border-gray-200">
+                    <div>
+                      <p className="text-xs text-gray-500">Price per Order</p>
+                      <p className="text-sm font-bold text-gray-900">
+                        ₹{restaurant.priceForOne || "0"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Delivery Time</p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {restaurant.deliveryTime || "0"} mins
+                      </p>
+                    </div>
                   </div>
 
                   {/* Info Row */}
@@ -356,6 +393,27 @@ const RestaurantDisplay = () => {
                         Revenue: ₹{restaurant.revenue.toLocaleString()}
                       </span>
                     )}
+                    {restaurant.revenue > 0 && (
+                      <span className="text-xs text-gray-600 ml-auto">
+                        Revenue: ₹{restaurant.revenue.toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Hours & Contact */}
+                  <div className="pt-3 border-t border-gray-200">
+                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                      <Clock size={14} />
+                      <span className="text-xs">
+                        {restaurant.openTime} - {restaurant.closeTime}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 truncate">
+                      📞 {restaurant.phone}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      📧 {restaurant.email}
+                    </p>
                   </div>
 
                   {/* Hours & Contact */}
