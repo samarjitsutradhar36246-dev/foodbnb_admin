@@ -5,6 +5,7 @@ import { db } from "../../Firebase";
 
 const RestaurantDisplay = () => {
   const [activeFilter, setActiveFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [allRestaurants, setAllRestaurants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -107,12 +108,15 @@ const RestaurantDisplay = () => {
       .join(" ");
   };
 
-  const filteredRestaurants =
-    activeFilter === "all"
-      ? allRestaurants
-      : allRestaurants.filter(
-          (restaurant) => restaurant.status === activeFilter
-        );
+  const filteredRestaurants = allRestaurants.filter((restaurant) => {
+    const matchesStatus =
+      activeFilter === "all" || restaurant.status === activeFilter;
+    const matchesSearch =
+      searchQuery === "" ||
+      restaurant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      restaurant.ownerName.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
 
   const getFilterCount = (status) => {
     if (status === "all") return allRestaurants.length;
@@ -221,6 +225,49 @@ const RestaurantDisplay = () => {
               }`}>
               Temporarily Closed ({getFilterCount("temporarily closed")})
             </button>
+          </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+          <div className="relative">
+            <svg
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search by kitchen name or owner name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            )}
           </div>
         </div>
 
