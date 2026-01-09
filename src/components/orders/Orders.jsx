@@ -38,7 +38,7 @@ const Orders = () => {
               ? formatDistanceToNow(data.time.toDate(), { addSuffix: true })
               : "N/A",
             // Add default status if missing and normalize to lowercase
-            status: (data.order_status || "preparing").toLowerCase(),
+            status: (data.orderStatus || "preparing").toLowerCase(),
           };
         });
         setAllOrders(ordersList);
