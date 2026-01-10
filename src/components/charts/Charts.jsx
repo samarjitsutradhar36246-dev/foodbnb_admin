@@ -367,7 +367,7 @@ export default function DashboardOverview() {
                 recentOrders.map((order) => (
                   <div
                     key={order.id}
-                    className="border-b border-slate-300 pb-4 last:border-b-0 hover:bg-slate-100 rounded-lg p-3 transition-colors duration-200">
+                   className="border-b border-slate-300 mb-4 last:mb-0  hover:bg-slate-100 rounded-lg p-3 transition-colors duration-200">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
                         <h3 className="text-black font-semibold text-base">
@@ -464,7 +464,7 @@ export default function DashboardOverview() {
                 filteredReviews.map((review) => (
                   <div
                     key={review.id}
-                    className="border-b border-slate-300 pb-4 last:border-b-0 hover:bg-slate-100 rounded-lg p-3 transition-colors duration-200">
+                    className="border-b border-slate-300 pb-4  hover:bg-slate-100 rounded-lg p-3 transition-colors duration-200">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
                         <h3 className="text-black font-semibold text-lg mb-1">
