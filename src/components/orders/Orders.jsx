@@ -1,5 +1,5 @@
 // import { useState } from "react";
-import { MapPin, Clock, UtensilsCrossed, Copy } from "lucide-react";
+import { MapPin, Clock, UtensilsCrossed, Copy, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../Firebase";
@@ -7,9 +7,10 @@ import { formatDistanceToNow } from "date-fns";
 
 const Orders = () => {
   const [activeFilter, setActiveFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [allOrders, setAllOrders] = useState([]);
-  const [copy , setCopy] = useState("");
+  const [copy, setCopy] = useState("");
   const [copiedId, setCopiedId] = useState(null);
   const [showToast, setShowToast] = useState(false);
 
@@ -22,7 +23,6 @@ const Orders = () => {
     setTimeout(() => setShowToast(false), 2000);
   };
 
-  
   //order data fetching from firebase
   useEffect(() => {
     const fetchOrders = async () => {
@@ -62,10 +62,7 @@ const Orders = () => {
       default:
         return "bg-gray-100 text-gray-700";
     }
-  };  
-
-  
-
+  };
 
   const getStatusLabel = (status) => {
     return status
@@ -74,10 +71,20 @@ const Orders = () => {
       .join(" ");
   };
 
-  const filteredOrders =
-    activeFilter === "all"
-      ? allOrders
-      : allOrders.filter((order) => order.status === activeFilter);
+  const filteredOrders = allOrders.filter((order) => {
+    // Filter by status
+    if (activeFilter !== "all" && order.status !== activeFilter) {
+      return false;
+    }
+    // Filter by search query
+    if (searchQuery.trim() !== "") {
+      const query = searchQuery.toLowerCase();
+      const nameMatch = order.name?.toLowerCase().includes(query);
+      const uidMatch = order.Uid?.toLowerCase().includes(query);
+      return nameMatch || uidMatch;
+    }
+    return true;
+  });
 
   const getFilterCount = (status) => {
     if (status === "all") return allOrders.length;
@@ -121,8 +128,7 @@ const Orders = () => {
               className="w-4 h-4"
               fill="none"
               stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+              viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -139,8 +145,7 @@ const Orders = () => {
                 activeFilter === "all"
                   ? "bg-orange-500 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
+              }`}>
               All Orders ({getFilterCount("all")})
             </button>
             <button
@@ -149,8 +154,7 @@ const Orders = () => {
                 activeFilter === "preparing"
                   ? "bg-orange-500 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
+              }`}>
               Preparing ({getFilterCount("preparing")})
             </button>
             <button
@@ -159,8 +163,7 @@ const Orders = () => {
                 activeFilter === "in transit"
                   ? "bg-orange-500 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
+              }`}>
               In Transit ({getFilterCount("in transit")})
             </button>
             <button
@@ -169,31 +172,44 @@ const Orders = () => {
                 activeFilter === "delivered"
                   ? "bg-orange-500 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
+              }`}>
               Delivered ({getFilterCount("delivered")})
             </button>
+
             <button
               onClick={() => setActiveFilter("cancelled")}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
                 activeFilter === "cancelled"
                   ? "bg-orange-500 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
+              }`}>
               Cancelled ({getFilterCount("cancelled")})
             </button>
           </div>
         </div>
-
+        {/* Search Bar */}
+        <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+          <div className="relative">
+            <Search
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              size={20}
+            />
+            <input
+              type="text"
+              placeholder="Search by name or UID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            />
+          </div>
+        </div>
         {/* CHANGED: Using ternary operator to show orders or "No orders currently" message */}
         {filteredOrders.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredOrders.map((order) => (
               <div
                 key={order.id}
-                className="bg-white rounded-lg border border-gray-200 p-5 shadow-lg hover:shadow-xl transition-shadow"
-              >
+                className="bg-white rounded-lg border border-gray-200 p-5 shadow-lg hover:shadow-xl transition-shadow">
                 {/* Order Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div>
@@ -205,33 +221,30 @@ const Orders = () => {
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${getStatusColor(
                       order.status
-                    )}`}
-                  >
+                    )}`}>
                     {getStatusLabel(order.status)}
                   </span>
                 </div>
 
                 {/* Customer Info */}
                 <div className="mb-4">
-                  <p className="font-semibold text-gray-900">
-                    {order.name}
-                  </p>
+                  <p className="font-semibold text-gray-900">{order.name}</p>
                   {/* user id */}
-                   <div className="flex items-start gap-2 text-sm text-gray-600 mb-2" >
-                    <p className="line-clamp-2">Uid : {order.Uid}
-                    <span className="relative group ml-2">
-                      <Copy 
-                        size={14} 
-                        className="inline cursor-pointer text-gray-400 hover:text-black transition-colors" 
-                        onClick={() => handleCopy(order.Uid)}
-                      />
-                      <span className="absolute left-0 bottom-full mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                        Copy
+                  <div className="flex items-start gap-2 text-sm text-gray-600 mb-2">
+                    <p className="line-clamp-2">
+                      Uid : {order.Uid}
+                      <span className="relative group ml-2">
+                        <Copy
+                          size={14}
+                          className="inline cursor-pointer text-gray-400 hover:text-black transition-colors"
+                          onClick={() => handleCopy(order.Uid)}
+                        />
+                        <span className="absolute left-0 bottom-full mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                          Copy
+                        </span>
                       </span>
-                    </span>
                     </p>
                   </div>
-
 
                   <div className="flex items-start gap-2 text-sm text-gray-600">
                     <MapPin size={16} className="mt-0.5 shrink-0" />

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { TrendingUp, TrendingDown, Users } from "lucide-react";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, doc, getDoc } from "firebase/firestore";
+import { getCountFromServer } from "firebase/firestore";
 import { db } from "../../Firebase";
 
 // --- Sub-component for Number Animation ---
@@ -257,25 +258,23 @@ const Analytics = () => {
 
   const fetchTotalUsers = async () => {
     try {
-      const usersCollection = collection(db, "users");
-      const userSnapshot = await getDocs(usersCollection);
+      // Query the users collection
+      const q = query(collection(db, "users"));
+      const snapshot = await getCountFromServer(q);
 
-      let firstTimeCount = 0;
-      const totalCust = userSnapshot.size; // Total number of user documents
-
+      const totalCust = snapshot.data().count; // Total number of user documents
       console.log("Total users documents:", totalCust);
 
-      userSnapshot.forEach((doc) => {
-        const userData = doc.data();
-        const noOfOrders = userData.noOfOrders || 0;
+      // Get first-time customers from a single stats document instead of looping all users
+      // Assuming you already maintain a stats doc at 'stats/app'
+      const statsRef = doc(db, "stats", "app");
+      const statsSnap = await getDoc(statsRef);
 
-        console.log(`User ${doc.id}: noOfOrders = ${noOfOrders}`);
-
-        // First time customers: users with less than 10 orders
-        if (noOfOrders < 10) {
-          firstTimeCount++;
-        }
-      });
+      let firstTimeCount = 0;
+      if (statsSnap.exists()) {
+        const statsData = statsSnap.data();
+        firstTimeCount = statsData.firstTimeUsers || 0;
+      }
 
       console.log("First time customers:", firstTimeCount);
 
