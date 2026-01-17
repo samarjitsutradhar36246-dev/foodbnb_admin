@@ -131,16 +131,16 @@ const RestaurantDisplay = () => {
     return "text-red-600";
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-          <p className="mt-4 text-gray-600">Loading kitchens...</p>
-        </div>
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8 flex items-center justify-center">
+  //       <div className="text-center">
+  //         <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+  //         <p className="mt-4 text-gray-600">Loading kitchens...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   if (error) {
     return (
@@ -150,7 +150,8 @@ const RestaurantDisplay = () => {
           <p className="text-gray-600">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          >
             Retry
           </button>
         </div>
@@ -178,7 +179,8 @@ const RestaurantDisplay = () => {
               className="w-4 h-4"
               fill="none"
               stroke="currentColor"
-              viewBox="0 0 24 24">
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -195,7 +197,8 @@ const RestaurantDisplay = () => {
                 activeFilter === "all"
                   ? "bg-gray-500 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}>
+              }`}
+            >
               All Restaurants ({getFilterCount("all")})
             </button>
             <button
@@ -204,7 +207,8 @@ const RestaurantDisplay = () => {
                 activeFilter === "open"
                   ? "bg-green-500 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}>
+              }`}
+            >
               Open ({getFilterCount("open")})
             </button>
             <button
@@ -213,7 +217,8 @@ const RestaurantDisplay = () => {
                 activeFilter === "closed"
                   ? "bg-red-500 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}>
+              }`}
+            >
               Closed ({getFilterCount("closed")})
             </button>
             <button
@@ -222,7 +227,8 @@ const RestaurantDisplay = () => {
                 activeFilter === "temporarily closed"
                   ? "bg-yellow-500 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}>
+              }`}
+            >
               Temporarily Closed ({getFilterCount("temporarily closed")})
             </button>
           </div>
@@ -235,7 +241,8 @@ const RestaurantDisplay = () => {
               className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
               fill="none"
               stroke="currentColor"
-              viewBox="0 0 24 24">
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -253,12 +260,14 @@ const RestaurantDisplay = () => {
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
                 <svg
                   className="w-5 h-5"
                   fill="none"
                   stroke="currentColor"
-                  viewBox="0 0 24 24">
+                  viewBox="0 0 24 24"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -277,7 +286,8 @@ const RestaurantDisplay = () => {
             {filteredRestaurants.map((restaurant) => (
               <div
                 key={restaurant.id}
-                className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
+                className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-lg hover:shadow-xl transition-shadow"
+              >
                 {/* Featured Image */}
                 <div className="relative h-40 bg-gray-200 overflow-hidden">
                   <img
@@ -318,7 +328,8 @@ const RestaurantDisplay = () => {
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold uppercase whitespace-nowrap ml-2 ${getStatusColor(
                         restaurant.status
-                      )}`}>
+                      )}`}
+                    >
                       {getStatusLabel(restaurant.status)}
                     </span>
                   </div>
@@ -338,7 +349,8 @@ const RestaurantDisplay = () => {
                     <span
                       className={`font-semibold text-sm ${getRatingColor(
                         restaurant.rating
-                      )}`}>
+                      )}`}
+                    >
                       {restaurant.rating.toFixed(1)}
                     </span>
                     <span className="text-xs text-gray-500">
@@ -358,7 +370,8 @@ const RestaurantDisplay = () => {
                         {restaurant.specialties.map((specialty, idx) => (
                           <span
                             key={idx}
-                            className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                            className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded"
+                          >
                             {specialty}
                           </span>
                         ))}
@@ -399,7 +412,8 @@ const RestaurantDisplay = () => {
                         restaurant.isVeg
                           ? "bg-green-100 text-green-700"
                           : "bg-red-100 text-red-700"
-                      }`}>
+                      }`}
+                    >
                       {restaurant.isVeg ? "🥗 Vegetarian" : "🍗 Non-Vegetarian"}
                     </span>
                     {restaurant.revenue > 0 && (
