@@ -654,6 +654,7 @@ const DeliveryMap = ({ drivers }) => {
                 .bindPopup(
                   `<div class="p-2">
                     <h4 class="font-bold text-sm">${driver.name}</h4>
+                    <p class="text-xs text-gray-600">${driver.id || "N/A"}</p>
                     <p class="text-xs text-gray-600">${driver.vechicleType || "N/A"}</p>
                     <p class="text-xs font-semibold mt-1">Delivering: ${driver.activeOrders || 0} orders</p>
                     <p class="text-xs text-gray-500 mt-1">📍 ${lat.toFixed(4)}, ${lng.toFixed(4)}</p>

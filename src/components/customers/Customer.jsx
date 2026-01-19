@@ -9,6 +9,9 @@ import {
   CreditCard,
   MapPin,
   Image,
+  Copy,
+  Phone,
+  MapPinned,
 } from "lucide-react";
 import {
   collection,
@@ -34,6 +37,7 @@ const Customer = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [customerOrders, setCustomerOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: "" });
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -70,7 +74,7 @@ const Customer = () => {
       const ordersQuery = query(
         collection(db, "orders"),
         where("time", ">=", oneMonthAgo),
-        limit(500)
+        limit(500),
       );
 
       const ordersSnapshot = await getDocs(ordersQuery);
@@ -132,6 +136,8 @@ const Customer = () => {
               initials,
               color,
               hasRecentOrders: recentCustomerIdsCache?.has(doc.id),
+              address: data.address || null,
+              phone: data.phone || null,
             };
           });
 
@@ -143,7 +149,7 @@ const Customer = () => {
         (err) => {
           if (!isMounted) return;
           setError(`Failed to load customers: ${err.message}`);
-        }
+        },
       );
     };
 
@@ -165,6 +171,15 @@ const Customer = () => {
     };
   }, [user]);
 
+  const handleCopyId = (id) => {
+    navigator.clipboard.writeText(id).then(() => {
+      setToast({ show: true, message: "ID copied to clipboard!" });
+      setTimeout(() => {
+        setToast({ show: false, message: "" });
+      }, 3000);
+    });
+  };
+
   const handleViewDetails = async (customer) => {
     setSelectedCustomer(customer);
     setOrdersLoading(true);
@@ -172,7 +187,7 @@ const Customer = () => {
     try {
       const ordersQuery = query(
         collection(db, "orders"),
-        where("Uid", "==", customer.id)
+        where("Uid", "==", customer.id),
       );
 
       const querySnapshot = await getDocs(ordersQuery);
@@ -294,7 +309,8 @@ const Customer = () => {
             filteredCustomers.map((customer) => (
               <div
                 key={customer.id}
-                className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow border border-slate-200">
+                className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow border border-slate-200"
+              >
                 <div className="flex items-center mb-4">
                   {customer.photoURL ? (
                     <img
@@ -304,7 +320,8 @@ const Customer = () => {
                     />
                   ) : (
                     <div
-                      className={`w-16 h-16 rounded-full ${customer.color} flex items-center justify-center text-white font-bold text-xl mr-4`}>
+                      className={`w-16 h-16 rounded-full ${customer.color} flex items-center justify-center text-white font-bold text-xl mr-4`}
+                    >
                       {customer.initials}
                     </div>
                   )}
@@ -315,14 +332,39 @@ const Customer = () => {
                 </h3>
 
                 <div className="space-y-2 text-sm text-slate-600 mb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <CreditCard className="w-4 h-4 mr-2 text-slate-400" />
+                      <span className="text-xs text-slate-500">
+                        ID: {customer.id}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => handleCopyId(customer.id)}
+                      className="p-1.5 hover:bg-slate-100 rounded-md transition-colors group"
+                      title="Copy ID"
+                    >
+                      <Copy className="w-4 h-4 text-slate-400 group-hover:text-orange-500" />
+                    </button>
+                  </div>
                   <div className="flex items-center">
                     <Mail className="w-4 h-4 mr-2 text-slate-400" />
                     <span className="truncate">{customer.email}</span>
                   </div>
+
+                  {/* this is for the customer address */}
                   <div className="flex items-center">
-                    <CreditCard className="w-4 h-4 mr-2 text-slate-400" />
+                    <MapPinned className="w-4 h-4 mr-2 text-slate-400" />
                     <span className="text-xs text-slate-500">
-                      ID: {customer.id.substring(0, 10)}...
+                      address : {customer.address || "N/A"}
+                    </span>
+                  </div>
+
+                  {/* this is for the customer phone number */}
+                  <div className="flex items-center">
+                    <Phone className="w-4 h-4 mr-2 text-slate-400" />
+                    <span className="text-xs text-slate-500">
+                      phone : {customer.phone || "N/A"}
                     </span>
                   </div>
                 </div>
@@ -345,7 +387,7 @@ const Customer = () => {
                     <p className="text-xs font-semibold text-slate-600">
                       {customer.updatedAt
                         ? new Date(
-                            customer.updatedAt.toDate()
+                            customer.updatedAt.toDate(),
                           ).toLocaleDateString()
                         : "N/A"}
                     </p>
@@ -354,7 +396,8 @@ const Customer = () => {
 
                 <button
                   onClick={() => handleViewDetails(customer)}
-                  className="w-full h-10 bg-orange-500 hover:bg-orange-600 text-white font-semibold  rounded-lg transition-colors ">
+                  className="w-full h-10 bg-orange-500 hover:bg-orange-600 text-white font-semibold  rounded-lg transition-colors "
+                >
                   View Details
                 </button>
               </div>
@@ -378,7 +421,8 @@ const Customer = () => {
               </h2>
               <button
                 onClick={closeModal}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              >
                 <X className="w-6 h-6 text-slate-600" />
               </button>
             </div>
@@ -394,7 +438,8 @@ const Customer = () => {
                     />
                   ) : (
                     <div
-                      className={`w-16 h-16 rounded-full ${selectedCustomer.color} flex items-center justify-center text-white font-bold text-xl mr-4`}>
+                      className={`w-16 h-16 rounded-full ${selectedCustomer.color} flex items-center justify-center text-white font-bold text-xl mr-4`}
+                    >
                       {selectedCustomer.initials}
                     </div>
                   )}
@@ -426,7 +471,7 @@ const Customer = () => {
                     <p className="text-xs font-semibold text-slate-600">
                       {selectedCustomer.createdAt
                         ? new Date(
-                            selectedCustomer.createdAt.toDate()
+                            selectedCustomer.createdAt.toDate(),
                           ).toLocaleDateString()
                         : "N/A"}
                     </p>
@@ -447,7 +492,8 @@ const Customer = () => {
                   {customerOrders.map((order) => (
                     <div
                       key={order.id}
-                      className="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                      className="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md transition-shadow"
+                    >
                       <div className="flex items-center justify-between mb-3">
                         <div>
                           <p className="font-bold text-slate-800">
@@ -461,8 +507,9 @@ const Customer = () => {
                         </div>
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-                            order.orderStatus
-                          )}`}>
+                            order.orderStatus,
+                          )}`}
+                        >
                           {getStatusText(order.orderStatus)}
                         </span>
                       </div>
@@ -494,7 +541,8 @@ const Customer = () => {
                           order.items.map((item, idx) => (
                             <div
                               key={idx}
-                              className="flex items-center justify-between text-sm">
+                              className="flex items-center justify-between text-sm"
+                            >
                               <span className="text-slate-700">
                                 {item.name} x {item.qnt}
                               </span>
@@ -516,7 +564,7 @@ const Customer = () => {
                               ₹
                               {order.items.reduce(
                                 (sum, item) => sum + item.price * item.qnt,
-                                0
+                                0,
                               )}
                             </span>
                           </div>
@@ -535,6 +583,13 @@ const Customer = () => {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {toast.show && (
+        <div className="fixed bottom-8 right-8 bg-slate-800 text-white px-6 py-3 rounded-lg shadow-2xl animate-slide-up z-50 flex items-center gap-2">
+          <Copy className="w-5 h-5 text-green-400" />
+          <span className="font-medium">{toast.message}</span>
         </div>
       )}
     </div>
