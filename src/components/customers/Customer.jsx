@@ -322,7 +322,8 @@ const Customer = () => {
               displayedCustomers.map((customer) => (
                 <div
                   key={customer.id}
-                  className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow border border-slate-200">
+                  className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow border border-slate-200"
+                >
                   <div className="flex items-center mb-4">
                     {customer.photoURL ? (
                       <img
@@ -332,7 +333,8 @@ const Customer = () => {
                       />
                     ) : (
                       <div
-                        className={`w-16 h-16 rounded-full ${customer.color} flex items-center justify-center text-white font-bold text-xl mr-4`}>
+                        className={`w-16 h-16 rounded-full ${customer.color} flex items-center justify-center text-white font-bold text-xl mr-4`}
+                      >
                         {customer.initials}
                       </div>
                     )}
@@ -349,7 +351,8 @@ const Customer = () => {
                     <button
                       onClick={() => copyToClipboard(customer.id)}
                       className="ml-2 p-1 hover:bg-slate-200 rounded transition-colors shrink-0"
-                      title="Copy ID">
+                      title="Copy ID"
+                    >
                       {copiedId === customer.id ? (
                         <Check className="w-4 h-4 text-green-600" />
                       ) : (
@@ -371,7 +374,6 @@ const Customer = () => {
                       <MapPin className="w-4 h-4 mr-2 text-slate-400 shrink-0" />
                       <span className="truncate">{customer.address}</span>
                     </div>
-                    <div className="flex items-center justify-between bg-slate-50 p-2 rounded-lg"></div>
                   </div>
 
                   <div className="grid grid-cols-3 gap-4 mb-4 pt-4 border-t border-slate-200">
@@ -401,7 +403,8 @@ const Customer = () => {
 
                   <button
                     onClick={() => handleViewDetails(customer)}
-                    className="w-full h-10 bg-orange-500 hover:bg-orange-600 text-white font-semibold  rounded-lg transition-colors ">
+                    className="w-full h-10 bg-orange-500 hover:bg-orange-600 text-white font-semibold  rounded-lg transition-colors "
+                  >
                     View Details
                   </button>
                 </div>
@@ -420,7 +423,8 @@ const Customer = () => {
               {hasMore && (
                 <button
                   onClick={handleViewMore}
-                  className="flex items-center h-10 gap-2 px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition-colors shadow-md">
+                  className="flex items-center h-10 gap-2 px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition-colors shadow-md"
+                >
                   View More
                   <ChevronDown className="w-5 h-5" />
                 </button>
@@ -428,7 +432,8 @@ const Customer = () => {
               {showViewLess && (
                 <button
                   onClick={handleViewLess}
-                  className="flex items-center h-10 gap-2 px-6 py-3 bg-slate-600 hover:bg-slate-700 text-white font-semibold rounded-lg transition-colors shadow-md">
+                  className="flex items-center h-10 gap-2 px-6 py-3 bg-slate-600 hover:bg-slate-700 text-white font-semibold rounded-lg transition-colors shadow-md"
+                >
                   View Less
                   <ChevronUp className="w-5 h-5" />
                 </button>
@@ -447,7 +452,8 @@ const Customer = () => {
               </h2>
               <button
                 onClick={closeModal}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              >
                 <X className="w-6 h-6 text-slate-600" />
               </button>
             </div>
@@ -463,7 +469,8 @@ const Customer = () => {
                     />
                   ) : (
                     <div
-                      className={`w-16 h-16 rounded-full ${selectedCustomer.color} flex items-center justify-center text-white font-bold text-xl mr-4`}>
+                      className={`w-16 h-16 rounded-full ${selectedCustomer.color} flex items-center justify-center text-white font-bold text-xl mr-4`}
+                    >
                       {selectedCustomer.initials}
                     </div>
                   )}
@@ -494,7 +501,8 @@ const Customer = () => {
                     <button
                       onClick={() => copyToClipboard(selectedCustomer.id)}
                       className="ml-2 p-1 hover:bg-slate-100 rounded transition-colors id"
-                      title="Copy ID">
+                      title="Copy ID"
+                    >
                       {copiedId === selectedCustomer.id ? (
                         <Check className="w-4 h-4 text-green-600" />
                       ) : (
@@ -545,7 +553,8 @@ const Customer = () => {
                   {customerOrders.map((order) => (
                     <div
                       key={order.id}
-                      className="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                      className="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md transition-shadow"
+                    >
                       <div className="flex items-center justify-between mb-3">
                         <div>
                           <p className="font-bold text-slate-800">
@@ -560,7 +569,8 @@ const Customer = () => {
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
                             order.orderStatus,
-                          )}`}>
+                          )}`}
+                        >
                           {getStatusText(order.orderStatus)}
                         </span>
                       </div>
@@ -592,7 +602,8 @@ const Customer = () => {
                           order.items.map((item, idx) => (
                             <div
                               key={idx}
-                              className="flex items-center justify-between text-sm">
+                              className="flex items-center justify-between text-sm"
+                            >
                               <span className="text-slate-700">
                                 {item.name} x {item.qnt}
                               </span>
