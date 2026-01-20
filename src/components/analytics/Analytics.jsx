@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { TrendingUp, TrendingDown, Users } from "lucide-react";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../../Firebase";
@@ -35,12 +35,226 @@ const AnimatedNumber = ({ value, duration = 1000 }) => {
   return isPrefix ? `${suffix}${formatted}` : `${formatted}${suffix}`;
 };
 
+// --- User Location Map Component with Hotspots ---
+const UserLocationMap = ({ users }) => {
+  const mapContainer = useRef(null);
+  const map = useRef(null);
+
+  useEffect(() => {
+    // Dynamically load Leaflet CSS
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href =
+      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
+    document.head.appendChild(link);
+
+    // Dynamically load Leaflet JS
+    const script = document.createElement("script");
+    script.src =
+      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
+    script.async = true;
+    script.onload = () => {
+      if (mapContainer.current && !map.current) {
+        // Default center (India)
+        let centerLat = 20.5937;
+        let centerLng = 78.9629;
+        let zoomLevel = 5;
+
+        // Get all valid user locations
+        const validLocations = users
+          .filter((user) => user.location && user.noOfOrders > 0)
+          .map((user) => {
+            let lat, lng;
+
+            if (typeof user.location === "object") {
+              lat = user.location.latitude || user.location.lat;
+              lng = user.location.longitude || user.location.lng;
+            } else if (typeof user.location === "string") {
+              const coords = user.location.split(",");
+              lat = parseFloat(coords[0]);
+              lng = parseFloat(coords[1]);
+            }
+
+            if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
+              return { ...user, lat: parseFloat(lat), lng: parseFloat(lng) };
+            }
+            return null;
+          })
+          .filter(Boolean);
+
+        // Adjust map center if users exist
+        if (validLocations.length > 0) {
+          const avgLat =
+            validLocations.reduce((sum, u) => sum + u.lat, 0) /
+            validLocations.length;
+          const avgLng =
+            validLocations.reduce((sum, u) => sum + u.lng, 0) /
+            validLocations.length;
+
+          centerLat = avgLat;
+          centerLng = avgLng;
+          zoomLevel = validLocations.length > 1 ? 10 : 12;
+        }
+
+        // Initialize map
+        map.current = window.L.map(mapContainer.current).setView(
+          [centerLat, centerLng],
+          zoomLevel,
+        );
+
+        // Add OpenStreetMap tile layer
+        window.L.tileLayer(
+          "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+          {
+            attribution:
+              '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19,
+          },
+        ).addTo(map.current);
+
+        if (validLocations.length === 0) {
+          return;
+        }
+
+        // Add hotspot circles and pins for each individual user
+        validLocations.forEach((user) => {
+          // Calculate opacity and radius based on user's order count
+          const maxOrders = Math.max(
+            ...validLocations.map((u) => u.noOfOrders || 0),
+            1,
+          );
+          const minOrders = Math.min(
+            ...validLocations.map((u) => u.noOfOrders || 0),
+            1,
+          );
+
+          let opacity;
+          if (maxOrders === minOrders) {
+            opacity = 0.6;
+          } else {
+            opacity =
+              0.2 +
+              (((user.noOfOrders || 0) - minOrders) / (maxOrders - minOrders)) *
+                0.6;
+          }
+
+          // Calculate circle radius based on orders
+          const radius = 20 + ((user.noOfOrders || 0) / maxOrders) * 80;
+
+          // Draw multiple concentric circles for hotspot effect
+          const radiusLayers = [
+            { radius: radius, opacity: opacity * 0.3 },
+            { radius: radius * 0.7, opacity: opacity * 0.6 },
+            { radius: radius * 0.4, opacity: opacity * 0.9 },
+          ];
+
+          radiusLayers.forEach((layer) => {
+            window.L.circleMarker([user.lat, user.lng], {
+              radius: layer.radius,
+              fillColor: "#FF5A5F",
+              color: "#FF5A5F",
+              weight: 0,
+              opacity: 0,
+              fillOpacity: layer.opacity,
+            }).addTo(map.current);
+          });
+
+          // Add main clickable hotspot circle
+          window.L.circleMarker([user.lat, user.lng], {
+            radius: radius * 0.5,
+            fillColor: "#FF5A5F",
+            color: "#CC4449",
+            weight: 2,
+            opacity: opacity,
+            fillOpacity: opacity * 0.7,
+          })
+            .bindPopup(
+              `<div class="p-3 text-center">
+                <h4 class="font-bold text-sm text-gray-900">${user.name}</h4>
+                <p class="text-xs text-gray-600 mt-1">Orders: ${user.noOfOrders || 0}</p>
+              </div>`,
+            )
+            .addTo(map.current);
+        });
+
+        // Add individual user markers on top
+        validLocations.forEach((user) => {
+          const colors = [
+            // "#3b82f6",
+            "#ef4444",
+            // "#10b981",
+            // "#f59e0b",
+            // "#8b5cf6",
+            // "#ec4899",
+          ];
+          const userColor = colors[Math.floor(Math.random() * colors.length)];
+
+          const initials = user.name
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .toUpperCase();
+
+          // Create map pin style marker with initials
+          const markerHTML = `
+            <div class="relative flex items-center justify-center" style="width: 60px; height: 70px;">
+              <svg viewBox="0 0 32 40" width="40" height="50" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 0C8.27 0 2 6.27 2 14c0 7.73 14 26 14 26s14-18.27 14-26c0-7.73-6.27-14-14-14z" fill="${userColor}" stroke="white" stroke-width="2"/>
+                <circle cx="16" cy="14" r="6" fill="white"/>
+              </svg>
+              <div class="absolute text-white font-bold text-xs" style="top: 8px;">
+                ${initials}
+              </div>
+            </div>
+          `;
+
+          const customIcon = window.L.divIcon({
+            html: markerHTML,
+            iconSize: [40, 50],
+            iconAnchor: [20, 50],
+            popupAnchor: [0, -50],
+            className: "custom-marker-pin",
+          });
+
+          window.L.marker([user.lat, user.lng], { icon: customIcon })
+            .bindPopup(
+              `<div class="p-3 min-w-max">
+                <h4 class="font-bold text-sm text-gray-900">${user.name}</h4>
+                <p class="text-xs text-gray-600 mt-1">${user.email || "N/A"}</p>
+                <p class="text-xs font-semibold text-blue-600 mt-2">Orders: ${user.noOfOrders || 0}</p>
+                <p class="text-xs text-gray-500 mt-1">📍 ${user.lat.toFixed(4)}, ${user.lng.toFixed(4)}</p>
+              </div>`,
+            )
+            .addTo(map.current);
+        });
+      }
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+      }
+    };
+  }, [users]);
+
+  return (
+    <div
+      ref={mapContainer}
+      className="w-full rounded-lg"
+      style={{ minHeight: "500px" }}
+    />
+  );
+};
+
 const Analytics = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [firstTimeCustomers, setFirstTimeCustomers] = useState(0);
   const [totalCustomers, setTotalCustomers] = useState(0);
   const [cancelledOrders, setCancelledOrders] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState([]);
   const [revenueData, setRevenueData] = useState([
     { month: "Dec", revenue: "₹0", orders: "0 orders", percentage: 0 },
     { month: "Jan", revenue: "₹0", orders: "0 orders", percentage: 0 },
@@ -158,11 +372,11 @@ const Analytics = () => {
         const baseValue = 50;
         const weeklyPercentage = Math.min(
           (weeklyOrdersCount / baseValue) * 100,
-          100
+          100,
         );
         const monthlyPercentage = Math.min(
           (monthlyOrdersCount / baseValue) * 100,
-          100
+          100,
         );
 
         setOrderFrequency([
@@ -191,7 +405,7 @@ const Analytics = () => {
             orders: `${monthData.Dec.count} orders`,
             percentage: Math.min(
               (monthData.Dec.delivered / revenueBaseValue) * 100,
-              100
+              100,
             ),
           },
           {
@@ -201,7 +415,7 @@ const Analytics = () => {
             orders: `${monthData.Jan.count} orders`,
             percentage: Math.min(
               (monthData.Jan.delivered / revenueBaseValue) * 100,
-              100
+              100,
             ),
           },
           {
@@ -211,7 +425,7 @@ const Analytics = () => {
             orders: `${monthData.Feb.count} orders`,
             percentage: Math.min(
               (monthData.Feb.delivered / revenueBaseValue) * 100,
-              100
+              100,
             ),
           },
           {
@@ -221,7 +435,7 @@ const Analytics = () => {
             orders: `${monthData.Mar.count} orders`,
             percentage: Math.min(
               (monthData.Mar.delivered / revenueBaseValue) * 100,
-              100
+              100,
             ),
           },
           {
@@ -231,7 +445,7 @@ const Analytics = () => {
             orders: `${monthData.Apr.count} orders`,
             percentage: Math.min(
               (monthData.Apr.delivered / revenueBaseValue) * 100,
-              100
+              100,
             ),
           },
           {
@@ -241,7 +455,7 @@ const Analytics = () => {
             orders: `${monthData.May.count} orders`,
             percentage: Math.min(
               (monthData.May.delivered / revenueBaseValue) * 100,
-              100
+              100,
             ),
           },
         ];
@@ -250,7 +464,7 @@ const Analytics = () => {
 
         const totalDeliveredRevenue = Object.values(monthData).reduce(
           (sum, month) => sum + month.delivered,
-          0
+          0,
         );
 
         setTotalRevenue(Math.round(totalDeliveredRevenue));
@@ -258,7 +472,7 @@ const Analytics = () => {
       (error) => {
         if (!isMounted) return;
         console.error("Error fetching orders:", error);
-      }
+      },
     );
 
     return () => {
@@ -277,6 +491,7 @@ const Analytics = () => {
         if (!isMounted) return;
 
         const totalCount = snapshot.size;
+        const usersData = [];
 
         // Count users with noOfOrders === 0 or noOfOrders === 1
         let firstTimeCount = 0;
@@ -284,11 +499,17 @@ const Analytics = () => {
           const userData = doc.data();
           const noOfOrders = userData.noOfOrders || 0;
 
+          usersData.push({
+            id: doc.id,
+            ...userData,
+          });
+
           if (noOfOrders === 0 || noOfOrders === 1) {
             firstTimeCount++;
           }
         });
 
+        setUsers(usersData);
         setTotalCustomers(totalCount);
         setFirstTimeCustomers(firstTimeCount);
         setLoading(false);
@@ -298,7 +519,7 @@ const Analytics = () => {
         if (!isMounted) return;
         console.error("Error fetching users:", error);
         setLoading(false);
-      }
+      },
     );
 
     return () => {
@@ -328,6 +549,8 @@ const Analytics = () => {
     },
   ];
 
+  const usersWithOrders = users.filter((u) => u.noOfOrders > 0);
+
   return (
     <div className="min-h-full bg-gray-50 p-4 md:p-6 lg:p-8 shadow-sm">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -346,7 +569,8 @@ const Analytics = () => {
           {statsCards.map((stat, index) => (
             <div
               key={index}
-              className="bg-white rounded-lg border border-gray-200 p-6 shadow-xl">
+              className="bg-white rounded-lg border border-gray-200 p-6 shadow-xl"
+            >
               <p className="text-sm text-gray-600 mb-2">{stat.label}</p>
               <p className="text-3xl font-bold text-gray-900 mb-2">
                 <AnimatedNumber value={stat.value} />
@@ -360,12 +584,31 @@ const Analytics = () => {
                 <p
                   className={`text-sm ${
                     stat.isPositive ? "text-green-600" : "text-red-600"
-                  }`}>
+                  }`}
+                >
                   {stat.change}
                 </p>
               </div>
             </div>
           ))}
+        </div>
+
+        {/* User Location Map with Hotspots */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-xl">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">
+                Customer Locations & Hotspots
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">
+                {usersWithOrders.length} customers with orders
+              </p>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+              <Users size={20} className="text-blue-600" />
+            </div>
+          </div>
+          <UserLocationMap users={usersWithOrders} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
