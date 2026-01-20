@@ -481,7 +481,7 @@ const Analytics = () => {
         setTotalRevenue(Math.round(totalDeliveredRevenue));
 
         // Update revenue data with actual values
-        const baseRevenue = 10000; // ₹1 Lakh base value
+        const baseRevenue = 10000; // Base for percentage calculation
         const maxRevenue = Math.max(
           ...Object.values(monthData).map((m) => m.delivered),
           baseRevenue,

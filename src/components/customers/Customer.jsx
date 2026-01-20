@@ -346,6 +346,16 @@ const Customer = () => {
                     <span className="text-xs text-slate-500 truncate">
                       {customer.id}
                     </span>
+                    <button
+                      onClick={() => copyToClipboard(customer.id)}
+                      className="ml-2 p-1 hover:bg-slate-200 rounded transition-colors shrink-0"
+                      title="Copy ID">
+                      {copiedId === customer.id ? (
+                        <Check className="w-4 h-4 text-green-600" />
+                      ) : (
+                        <Copy className="w-4 h-4 text-slate-600" />
+                      )}
+                    </button>
                   </div>
 
                   <div className="space-y-2 text-sm text-slate-600 mb-4">
@@ -361,18 +371,7 @@ const Customer = () => {
                       <MapPin className="w-4 h-4 mr-2 text-slate-400 shrink-0" />
                       <span className="truncate">{customer.address}</span>
                     </div>
-                    <div className="flex items-center justify-between bg-slate-50 p-2 rounded-lg">
-                      <button
-                        onClick={() => copyToClipboard(customer.id)}
-                        className="ml-2 p-1 hover:bg-slate-200 rounded transition-colors shrink-0"
-                        title="Copy ID">
-                        {copiedId === customer.id ? (
-                          <Check className="w-4 h-4 text-green-600" />
-                        ) : (
-                          <Copy className="w-4 h-4 text-slate-600" />
-                        )}
-                      </button>
-                    </div>
+                    <div className="flex items-center justify-between bg-slate-50 p-2 rounded-lg"></div>
                   </div>
 
                   <div className="grid grid-cols-3 gap-4 mb-4 pt-4 border-t border-slate-200">
