@@ -26,7 +26,7 @@ function DetailsModal({ restaurant: r, onClose }) {
         className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-[fadeInUp_0.2s_ease]"
         onClick={(e) => e.stopPropagation()}>
         {/* Header image */}
-        <div className="relative h-32 bg-gray-100 overflow-hidden">
+        <div className="relative h-32 bg-gray-100 ">
           <img
             src={r.featuredDishImage}
             alt={r.name}
@@ -47,7 +47,7 @@ function DetailsModal({ restaurant: r, onClose }) {
             <img
               src={r.profileImage}
               alt={r.name}
-              className="w-12 h-12 rounded-full border-2 border-white object-cover shadow"
+              className="w-12 h-12 rounded-full border-4 border-white object-cover shadow-md"
               onError={(e) => {
                 e.target.src = "https://i.pravatar.cc/150?img=1";
               }}
