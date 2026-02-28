@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { initializeApp, getApps } from "firebase/app";
-import { CircleX } from "lucide-react";
+import { CircleX, Copy, Check } from "lucide-react";
 import {
   getFirestore,
   collection,
@@ -295,6 +295,29 @@ function DetailsBtn({ onClick }) {
         <circle cx="12" cy="12" r="3" />
       </svg>
       Details
+    </button>
+  );
+}
+// ── Copy Email Button ─────────────────────────────────────────────────────────
+function CopyEmailBtn({ email }) {
+  const [copied, setCopied] = useState(false);
+  function handleCopy(e) {
+    e.stopPropagation();
+    navigator.clipboard.writeText(email).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
+  return (
+    <button
+      onClick={handleCopy}
+      title="Copy email"
+      className="inline-flex items-center justify-center w-5 h-5 rounded text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition shrink-0">
+      {copied ? (
+        <Check className="w-3 h-3 text-green-500" />
+      ) : (
+        <Copy className="w-3 h-3" />
+      )}
     </button>
   );
 }
@@ -814,8 +837,15 @@ export default function SupportRequests() {
                     <td className="hidden xl:table-cell px-4 lg:px-6 py-4 lg:py-5 text-xs lg:text-sm text-gray-500 whitespace-nowrap">
                       {row.datetime}
                     </td>
-                    <td className="hidden lg:table-cell px-4 lg:px-6 py-4 lg:py-5 text-xs lg:text-sm text-blue-500 hover:underline cursor-pointer max-w-50 xl:max-w-xs truncate">
-                      {row.email}
+                    <td className="hidden lg:table-cell px-4 lg:px-6 py-4 lg:py-5 max-w-50 xl:max-w-xs">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs lg:text-sm text-blue-500 truncate">
+                          {row.email}
+                        </span>
+                        {activeFilter === "Pending" && (
+                          <CopyEmailBtn email={row.email} />
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 lg:px-6 py-4 lg:py-5">
                       <DetailsBtn onClick={() => setSelectedRow(row)} />
